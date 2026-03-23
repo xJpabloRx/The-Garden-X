@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: #0f0f23;
+  color: #e0e0e0;
+  font-family: var(--font-inter);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+
+/* Better touch targets */
+@media (max-width: 640px) {
+  button, a { min-height: 36px; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1a1a2e; }
+::-webkit-scrollbar-thumb { background: #666677; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00ffff; }
+
+/* Glow effects */
+.glow-cyan  { box-shadow: 0 0 20px rgba(0,255,255,0.15); }
+.glow-purple { box-shadow: 0 0 20px rgba(167,139,250,0.15); }
+
+/* Grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
