@@ -94,10 +94,12 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
   const [checking, setChecking] = useState(false);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const controlsRef = useRef<{ stop: () => void } | null>(null);
   const supabase  = createClient();
 
   useEffect(() => {
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
+    return () => { stopCamera(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Look up a short/UUID token in exportaciones */
@@ -196,15 +198,39 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
   async function startCamera() {
     setError(""); setResult(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      // Request camera with autofocus and high resolution for better QR detection
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
       setScanning(true);
-      const { BrowserQRCodeReader } = await import("@zxing/browser");
-      const reader = new BrowserQRCodeReader();
-      const res = await reader.decodeOnceFromVideoDevice(undefined, videoRef.current!);
-      stopCamera();
-      processToken(res.getText());
+
+      // Use continuous decoding — much more reliable than decodeOnce
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatReader();
+
+      const controls = await reader.decodeFromStream(stream, videoRef.current!, (res, err) => {
+        if (res) {
+          const text = res.getText();
+          if (text) {
+            stopCamera();
+            processToken(text);
+          }
+        }
+        // Ignore NotFoundException — it just means no QR found in this frame
+        if (err && err.name !== "NotFoundException") {
+          // Only log unexpected errors, don't show to user during scanning
+        }
+      });
+      controlsRef.current = controls;
     } catch (e: unknown) {
       stopCamera();
       setError(e instanceof Error ? e.message : "Camera access error");
@@ -212,7 +238,11 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
   }
 
   function stopCamera() {
+    controlsRef.current?.stop();
+    controlsRef.current = null;
     streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setScanning(false);
   }
 
@@ -221,17 +251,52 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
     if (!file) return;
     setError(""); setResult(null);
     try {
-      const { BrowserQRCodeReader } = await import("@zxing/browser");
-      const reader = new BrowserQRCodeReader();
-      const img = await createImageBitmap(file);
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width; canvas.height = img.height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0);
-      const res = await reader.decodeFromCanvas(canvas);
-      processToken(res.getText());
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatReader();
+
+      // Create an image element and decode from it — works better than canvas for photos
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.src = url;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load image"));
+      });
+
+      // Try multiple approaches for reliability
+      let decoded = false;
+
+      // Approach 1: decode from image element directly
+      try {
+        const res = await reader.decodeFromImageElement(img);
+        if (res) { processToken(res.getText()); decoded = true; }
+      } catch { /* try next approach */ }
+
+      // Approach 2: draw to canvas at different scales
+      if (!decoded) {
+        const scales = [1, 0.5, 2];
+        for (const scale of scales) {
+          if (decoded) break;
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(img.naturalWidth * scale);
+            canvas.height = Math.round(img.naturalHeight * scale);
+            const ctx = canvas.getContext("2d")!;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const res = await reader.decodeFromCanvas(canvas);
+            if (res) { processToken(res.getText()); decoded = true; }
+          } catch { /* try next scale */ }
+        }
+      }
+
+      URL.revokeObjectURL(url);
+      if (!decoded) setError("No QR code found in image. Try a clearer photo.");
     } catch {
       setError("No QR code found in image");
     }
+    // Reset input so same file can be selected again
+    e.target.value = "";
   }
 
   return (
@@ -248,12 +313,13 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
             )}
             {scanning && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 border-2 border-cyan-400 rounded-lg opacity-70">
+                <div className="w-48 h-48 border-2 border-cyan-400 rounded-lg opacity-70 animate-pulse">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-cyan-400" />
                   <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-cyan-400" />
                   <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-cyan-400" />
                   <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-cyan-400" />
                 </div>
+                <p className="absolute bottom-3 text-xs text-cyan-400 bg-black/60 px-3 py-1 rounded-full">Scanning...</p>
               </div>
             )}
           </div>
