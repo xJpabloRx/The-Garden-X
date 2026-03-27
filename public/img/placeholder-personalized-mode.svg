@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+  <rect width="800" height="200" fill="#0a0a1a"/>
+  <rect x="20" y="15" width="760" height="170" rx="10" fill="#0e1525" stroke="#ffffff0d" stroke-width="1"/>
+  <text x="40" y="42" fill="#888" font-family="sans-serif" font-size="11">VARIETIES</text>
+  <rect x="40" y="50" width="340" height="30" rx="6" fill="#0a0a1a" stroke="#ffffff15" stroke-width="1"/>
+  <text x="55" y="70" fill="#fff" font-family="sans-serif" font-size="12">Freedom</text>
+  <text x="280" y="70" fill="#a855f7" font-family="sans-serif" font-size="11">Red</text>
+  <text x="340" y="70" fill="#22d3ee" font-family="monospace" font-size="12" font-weight="bold">×6</text>
+  <rect x="40" y="85" width="340" height="30" rx="6" fill="#0a0a1a" stroke="#ffffff15" stroke-width="1"/>
+  <text x="55" y="105" fill="#fff" font-family="sans-serif" font-size="12">Vendela</text>
+  <text x="280" y="105" fill="#a855f7" font-family="sans-serif" font-size="11">White</text>
+  <text x="340" y="105" fill="#22d3ee" font-family="monospace" font-size="12" font-weight="bold">×6</text>
+  <rect x="40" y="125" width="720" height="50" rx="8" fill="#22d3ee08" stroke="#22d3ee30" stroke-width="1"/>
+  <text x="60" y="148" fill="#888" font-family="monospace" font-size="11">Total: </text>
+  <text x="110" y="148" fill="#22d3ee" font-family="monospace" font-size="11" font-weight="bold">12 bonches</text>
+  <text x="210" y="148" fill="#888" font-family="monospace" font-size="11"> → </text>
+  <text x="230" y="148" fill="#a855f7" font-family="monospace" font-size="11" font-weight="bold">1 box</text>
+  <text x="280" y="148" fill="#888" font-family="monospace" font-size="11"> (300 stems)</text>
+</svg>

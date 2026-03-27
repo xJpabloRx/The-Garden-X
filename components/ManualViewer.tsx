@@ -16,7 +16,8 @@ type ManualBlock =
   | { type: "warning"; text: string }
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "list"; items: string[] }
-  | { type: "subtitle"; text: string };
+  | { type: "subtitle"; text: string }
+  | { type: "image"; src: string; alt: string };
 
 /* ═══════════════════════════════════════════════════════════
    CLIENT MANUAL CONTENT
@@ -27,11 +28,14 @@ const CLIENT_SECTIONS: ManualSection[] = [
     content: [
       { type: "text", text: "To access the client portal, you need the credentials provided by your administrator." },
       { type: "step", number: 1, text: "Open your browser and go to the portal URL provided by your admin." },
+      { type: "image", src: "/img/Screenshot of the login page.png", alt: "Login page" },
       { type: "step", number: 2, text: "Enter your email address and password." },
+      { type: "image", src: "/img/Screenshot showing the emailpassword fields and Sign In button.png", alt: "Email and password fields" },
       { type: "step", number: 3, text: "Click \"Sign In\" to access the dashboard." },
       { type: "tip", text: "If you forgot your password, contact your administrator to reset it." },
       { type: "subtitle", text: "Navigation" },
       { type: "text", text: "Once logged in, you'll see a sidebar on the left (or a menu icon ☰ on mobile) with all available sections." },
+      { type: "image", src: "/img/Screenshot of the sidebar navigation.png", alt: "Sidebar navigation" },
       { type: "table", headers: ["Section", "Description"], rows: [
         ["Shipments", "View your flower shipments and coordination details"],
         ["Inventory", "Track your available stock, sold items, and box contents"],
@@ -47,13 +51,16 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "shipments", title: "Shipments",
     content: [
       { type: "text", text: "The Shipments page is your main dashboard. Here you can see all your flower shipments from the farm." },
+      { type: "image", src: "/img/Screenshot of the Shipments page showing shipment cards.png", alt: "Shipments page" },
       { type: "subtitle", text: "Viewing Shipments" },
       { type: "step", number: 1, text: "Each shipment card shows: Client name, HAWB, AWB, Origin → Destination, and Status." },
       { type: "step", number: 2, text: "Click on a shipment card to expand it and see the box details (what each box contains)." },
+      { type: "image", src: "/img/Screenshot of an expanded shipment showing box contents.png", alt: "Expanded shipment" },
       { type: "subtitle", text: "Moving to Inventory" },
       { type: "text", text: "When a shipment arrives, you can move it to your inventory:" },
       { type: "step", number: 1, text: "Find the shipment you received." },
       { type: "step", number: 2, text: "Click the \"Move to Inventory\" button." },
+      { type: "image", src: "/img/Screenshot showing the Move to Inventory button.png", alt: "Move to Inventory button" },
       { type: "step", number: 3, text: "Confirm the action. The boxes will now appear in your Inventory section." },
       { type: "warning", text: "Once moved to inventory, this action cannot be undone. The button will be disabled to prevent duplicates across devices." },
     ],
@@ -68,19 +75,23 @@ const CLIENT_SECTIONS: ManualSection[] = [
         "Sold — Total units already sold",
         "Boxes — Total number of boxes in inventory",
       ]},
+      { type: "image", src: "/img/placeholder-inventory-stats.svg", alt: "Inventory stats cards" },
       { type: "subtitle", text: "Stock Summary" },
       { type: "step", number: 1, text: "Click \"Stock Summary\" to see all products grouped by variety." },
       { type: "step", number: 2, text: "Use the search bar to filter by variety name or color." },
       { type: "step", number: 3, text: "Each row shows: Variety, Type, Color, Stem Length, Total, Available, and Sold." },
       { type: "step", number: 4, text: "Click \"Sell\" on any row to sell directly from stock summary." },
+      { type: "image", src: "/img/Screenshot of the Stock Summary table.png", alt: "Stock Summary table" },
       { type: "subtitle", text: "By Shipment" },
       { type: "step", number: 1, text: "Click \"By Shipment\" to see inventory organized by shipment." },
       { type: "step", number: 2, text: "Click on a shipment to expand and see individual boxes." },
+      { type: "image", src: "/img/Screenshot of the By Shipment view with expanded boxes.png", alt: "By Shipment view" },
       { type: "subtitle", text: "Selling from Inventory" },
       { type: "step", number: 1, text: "Click \"Sell\" on any product or box." },
       { type: "step", number: 2, text: "Enter the quantity, buyer name, and optional notes." },
       { type: "step", number: 3, text: "Toggle \"Paid\" if the buyer has already paid." },
       { type: "step", number: 4, text: "Click \"Confirm Sale\" to complete." },
+      { type: "image", src: "/img/Screenshot of the sell modal.png", alt: "Sell modal" },
       { type: "tip", text: "When selling from Stock Summary, you'll need to select which specific box to deduct from." },
       { type: "subtitle", text: "Credits" },
       { type: "text", text: "If flowers are damaged or unsold, you can register a credit:" },
@@ -93,6 +104,7 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "sales", title: "Sales",
     content: [
       { type: "text", text: "The Sales page shows a complete history of all your sales." },
+      { type: "image", src: "/img/placeholder-sales-page.svg", alt: "Sales page" },
       { type: "subtitle", text: "Viewing Sales" },
       { type: "step", number: 1, text: "Each sale shows: Variety, Type, Quantity, Buyer, Date, and Payment status." },
       { type: "step", number: 2, text: "Use filters to search by variety, buyer, or date." },
@@ -109,6 +121,7 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "sell", title: "Sell Orders",
     content: [
       { type: "text", text: "Sell Orders let you create complete orders for your buyers, selecting multiple products from your inventory." },
+      { type: "image", src: "/img/placeholder-sell-orders.svg", alt: "Sell Orders page" },
       { type: "subtitle", text: "Creating a Sell Order" },
       { type: "step", number: 1, text: "Click \"New Sell Order\"." },
       { type: "step", number: 2, text: "Select a Buyer from the dropdown (or type a name for a one-time buyer)." },
@@ -123,6 +136,7 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "clients", title: "Clients (Buyers)",
     content: [
       { type: "text", text: "Manage your buyers — the people or businesses you sell flowers to." },
+      { type: "image", src: "/img/placeholder-buyers.svg", alt: "Buyers page" },
       { type: "subtitle", text: "Adding a Buyer" },
       { type: "step", number: 1, text: "Click \"Add Buyer\"." },
       { type: "step", number: 2, text: "Fill in: Name (required), Address, Phone, Email, Notes." },
@@ -136,6 +150,7 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "orders", title: "Orders",
     content: [
       { type: "text", text: "Orders allow you to reserve flowers from the farm for future shipments." },
+      { type: "image", src: "/img/placeholder-orders-page.svg", alt: "Orders page" },
       { type: "subtitle", text: "Creating an Order" },
       { type: "step", number: 1, text: "Click \"Create Order\" to open the order form." },
       { type: "step", number: 2, text: "Select a Farm Departure Date (minimum 2 days from today)." },
@@ -146,12 +161,14 @@ const CLIENT_SECTIONS: ManualSection[] = [
       { type: "step", number: 2, text: "Select category: Color or Red." },
       { type: "step", number: 3, text: "For Bonche: optionally select a specific variety." },
       { type: "step", number: 4, text: "Set number of boxes and stem length." },
+      { type: "image", src: "/img/placeholder-solid-mode.svg", alt: "Solid mode configuration" },
       { type: "subtitle", text: "Personalized Mode" },
       { type: "text", text: "Mix different varieties. Always bonche format." },
       { type: "step", number: 1, text: "Click \"Add varieties\" to open the variety picker." },
       { type: "step", number: 2, text: "Search and set quantity of bonches for each variety." },
       { type: "step", number: 3, text: "The system auto-distributes into boxes of 12 bonches." },
       { type: "step", number: 4, text: "Click \"Edit boxes\" to manually adjust the distribution." },
+      { type: "image", src: "/img/placeholder-personalized-mode.svg", alt: "Personalized mode" },
       { type: "warning", text: "Each box must have exactly 12 bonches. Incomplete boxes block submission." },
       { type: "subtitle", text: "Order Status" },
       { type: "table", headers: ["Status", "Meaning"], rows: [
@@ -167,6 +184,7 @@ const CLIENT_SECTIONS: ManualSection[] = [
     id: "qr", title: "QR Scanner",
     content: [
       { type: "text", text: "Scan QR codes on your boxes to quickly check their contents." },
+      { type: "image", src: "/img/placeholder-qr-scanner.svg", alt: "QR Scanner page" },
       { type: "subtitle", text: "Scanning with Camera" },
       { type: "step", number: 1, text: "Click \"Open Camera\"." },
       { type: "step", number: 2, text: "Allow camera access when prompted." },
@@ -195,7 +213,9 @@ const ADMIN_SECTIONS: ManualSection[] = [
       { type: "step", number: 1, text: "Go to the portal URL in your browser." },
       { type: "step", number: 2, text: "Enter your admin email and password." },
       { type: "step", number: 3, text: "Click \"Sign In\"." },
+      { type: "image", src: "/img/Screenshot of the login page.png", alt: "Login page" },
       { type: "text", text: "After logging in, you'll see the Admin Panel label and a purple Admin badge." },
+      { type: "image", src: "/img/Screenshot of the sidebar navigation.png", alt: "Admin sidebar" },
     ],
   },
   {
@@ -326,6 +346,25 @@ function Block({ block }: { block: ManualBlock }) {
   switch (block.type) {
     case "text":
       return <p className="text-sm text-gray-300 leading-relaxed">{block.text}</p>;
+    case "image":
+      return (
+        <div className="rounded-lg overflow-hidden border border-white/10 bg-white/2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={block.src} alt={block.alt}
+            className="w-full h-auto max-h-[400px] object-contain"
+            onError={(e) => {
+              // Replace broken images with a styled placeholder
+              const target = e.currentTarget;
+              target.style.display = "none";
+              const placeholder = target.nextElementSibling as HTMLElement;
+              if (placeholder) placeholder.style.display = "flex";
+            }}
+          />
+          <div className="hidden items-center justify-center h-32 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 text-dim text-xs italic">
+            📷 {block.alt}
+          </div>
+        </div>
+      );
     case "step":
       return (
         <div className="flex gap-3 items-start bg-white/2 border-l-2 border-cyan-400/40 rounded-r-lg px-3 py-2.5">

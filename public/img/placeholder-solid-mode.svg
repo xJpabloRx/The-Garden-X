@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+  <rect width="800" height="200" fill="#0a0a1a"/>
+  <rect x="20" y="15" width="760" height="170" rx="10" fill="#0e1525" stroke="#ffffff0d" stroke-width="1"/>
+  <text x="40" y="42" fill="#22d3ee" font-family="monospace" font-size="12">Box 1</text>
+  <rect x="40" y="55" width="160" height="32" rx="6" fill="#22d3ee15" stroke="#22d3ee40" stroke-width="1"/>
+  <text x="120" y="76" text-anchor="middle" fill="#22d3ee" font-family="sans-serif" font-size="12">Solid</text>
+  <rect x="210" y="55" width="160" height="32" rx="6" fill="#ffffff08" stroke="#ffffff15" stroke-width="1"/>
+  <text x="290" y="76" text-anchor="middle" fill="#888" font-family="sans-serif" font-size="12">Personalized</text>
+  <text x="40" y="112" fill="#888" font-family="sans-serif" font-size="11">Type</text>
+  <rect x="40" y="118" width="120" height="28" rx="6" fill="#22d3ee15" stroke="#22d3ee40" stroke-width="1"/>
+  <text x="100" y="137" text-anchor="middle" fill="#22d3ee" font-family="sans-serif" font-size="11">Bonche (12×25)</text>
+  <text x="200" y="112" fill="#888" font-family="sans-serif" font-size="11">Category</text>
+  <rect x="200" y="118" width="80" height="28" rx="6" fill="#a855f715" stroke="#a855f740" stroke-width="1"/>
+  <text x="240" y="137" text-anchor="middle" fill="#a855f7" font-family="sans-serif" font-size="11">Color</text>
+  <text x="40" y="170" fill="#22d3ee" font-family="monospace" font-size="12">= 1 box × 300 = 300 stems</text>
+</svg>
