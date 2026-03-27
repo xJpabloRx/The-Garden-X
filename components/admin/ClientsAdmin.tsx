@@ -86,6 +86,11 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
       });
     }
 
+    // Re-sync shipments if empresa changed
+    if (editForm.empresa !== (cliente?.empresa || "")) {
+      await supabase.rpc("resync_cliente_shipments", { p_cliente_id: id });
+    }
+
     setClientes(prev => prev.map(c => c.id === id ? {
       ...c, nombre: editForm.nombre, empresa: editForm.empresa || undefined,
       email, username: username || undefined,

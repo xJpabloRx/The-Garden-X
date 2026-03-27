@@ -8,28 +8,55 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: cliente } = await supabase
-    .from("clientes").select("id").eq("user_id", user!.id).single();
+    .from("clientes").select("id, empresa, nombre").eq("user_id", user!.id).single();
 
   const clienteId = cliente?.id ?? "";
+  const empresa = cliente?.empresa ?? "";
+  const nombre = cliente?.nombre ?? "";
 
-  // Try coordinaciones first
+  // Fetch coordinaciones by cliente_id
   const { data: coords } = await supabase
     .from("coordinaciones")
     .select("*")
     .eq("cliente_id", clienteId)
     .order("created_at", { ascending: false });
 
-  let coordinaciones: Coordinacion[] = (coords as Coordinacion[]) ?? [];
+  // Also fetch by empresa/nombre match (for shipments not yet linked)
+  let extraCoords: Coordinacion[] = [];
+  if (empresa) {
+    const { data: byName } = await supabase
+      .from("coordinaciones")
+      .select("*")
+      .is("cliente_id", null)
+      .ilike("cliente_nombre", empresa)
+      .order("created_at", { ascending: false });
+    if (byName) extraCoords = byName as Coordinacion[];
+  }
+
+  const coordIds = new Set((coords ?? []).map(c => c.id));
+  let coordinaciones: Coordinacion[] = [
+    ...((coords as Coordinacion[]) ?? []),
+    ...extraCoords.filter(c => !coordIds.has(c.id)),
+  ];
 
   // If no coordinaciones, build from exportaciones (fallback)
   if (coordinaciones.length === 0 && clienteId) {
-    const { data: exps } = await supabase
-      .from("exportaciones")
-      .select("*")
-      .eq("cliente_id", clienteId)
+    // Search by cliente_id OR by empresa name match
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let exps: any[] = [];
+    const { data: byId } = await supabase
+      .from("exportaciones").select("*").eq("cliente_id", clienteId)
       .order("created_at", { ascending: false });
+    if (byId) exps = byId;
 
-    if (exps && exps.length > 0) {
+    if (exps.length === 0 && empresa) {
+      const { data: byName } = await supabase
+        .from("exportaciones").select("*").is("cliente_id", null).ilike("cliente", empresa)
+        .order("created_at", { ascending: false });
+      if (byName) exps = byName;
+    }
+
+    if (exps.length > 0) {
       // Group by fecha+hawb+awb to create virtual coordinaciones
       const grouped = new Map<string, Coordinacion>();
       for (const e of exps) {
