@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Package, ShoppingCart,
   QrCode, LogOut, Leaf, Truck, Users, DollarSign,
   UserCircle, ClipboardList, ChevronDown, ChevronRight,
-  Menu, X,
+  Menu, X, HelpCircle,
 } from "lucide-react";
 
 const CLIENT_NAV = [
@@ -115,8 +115,13 @@ export default function Sidebar({ cliente, userEmail, isAdmin }: {
         )}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-4 border-t border-white/5">
+      {/* Help & Logout */}
+      <div className="px-3 py-4 border-t border-white/5 space-y-1">
+        <Link href="/dashboard/help"
+          className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+            pathname === "/dashboard/help" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-dim hover:text-white hover:bg-white/5")}>
+          <HelpCircle size={16} /> Help
+        </Link>
         <button onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-dim hover:text-red-400 hover:bg-red-400/5 transition-all w-full">
           <LogOut size={16} /> Sign Out
