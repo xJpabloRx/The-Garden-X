@@ -59,16 +59,36 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
 
   async function saveEdit(id: string) {
     setSaving(true); setError("");
+    const cliente = clientes.find(c => c.id === id);
+    const username = editForm.username.trim().toLowerCase();
+
+    // If email is empty, auto-generate from username
+    let email = editForm.email.trim();
+    if (!email && username) {
+      email = `${username}@thegardenx.local`;
+    } else if (!email) {
+      setError("Either email or username is required"); setSaving(false); return;
+    }
+
     const { error: err } = await supabase.from("clientes").update({
       nombre: editForm.nombre,
       empresa: editForm.empresa || null,
-      email: editForm.email,
-      username: editForm.username.toLowerCase() || null,
+      email,
+      username: username || null,
     }).eq("id", id);
     if (err) { setError(err.message); setSaving(false); return; }
+
+    // If email changed, also update auth.users
+    if (cliente?.user_id && email !== cliente.email) {
+      await supabase.rpc("admin_update_email", {
+        target_user_id: cliente.user_id,
+        new_email: email,
+      });
+    }
+
     setClientes(prev => prev.map(c => c.id === id ? {
       ...c, nombre: editForm.nombre, empresa: editForm.empresa || undefined,
-      email: editForm.email, username: editForm.username.toLowerCase() || undefined,
+      email, username: username || undefined,
     } : c));
     setEditingId(null);
     setSaving(false);
@@ -162,8 +182,9 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
                       className="w-full bg-panel border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
                   </div>
                   <div>
-                    <label className="block text-xs text-dim mb-1">Email</label>
-                    <input value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                    <label className="block text-xs text-dim mb-1">Email <span className="text-dim">(leave empty = username only)</span></label>
+                    <input value={editForm.email.endsWith("@thegardenx.local") ? "" : editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                      placeholder="Optional — clear to use username only"
                       className="w-full bg-panel border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
                   </div>
                 </div>
