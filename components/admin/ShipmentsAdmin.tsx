@@ -153,6 +153,15 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
   const [bulkDetails, setBulkDetails] = useState<BoxDetail[]>([]);
   const [bulkSaving, setBulkSaving] = useState(false);
 
+  // New shipment form
+  const [showNew, setShowNew] = useState(false);
+  const [newForm, setNewForm] = useState({
+    cliente_id: "", hawb: "", awb: "", origen: "UIO", destino: "MIA",
+    dae: "", hbs: "1", fecha: "", numBoxes: "1",
+  });
+  const [creatingShip, setCreatingShip] = useState(false);
+  const [createError, setCreateError] = useState("");
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [{ data: ships }, { data: vars }] = await Promise.all([
@@ -165,6 +174,65 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
   }, [supabase]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  async function createShipment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newForm.cliente_id) { setCreateError("Select a client"); return; }
+    setCreatingShip(true); setCreateError("");
+
+    const cliente = clientes.find(c => c.id === newForm.cliente_id);
+    const numBoxes = Math.max(1, parseInt(newForm.numBoxes) || 1);
+    const exportId = `WEB-${Date.now()}`;
+    const qrToken = exportId;
+
+    // Build cajas array
+    const cajas: CajaItem[] = [];
+    for (let i = 1; i <= numBoxes; i++) {
+      cajas.push({ caja: i, titulo: `Box ${i}`, cantidad: "0", stem_length: "", productos: [] });
+    }
+
+    const { data, error } = await supabase.from("exportaciones").insert({
+      export_id: exportId,
+      cliente: cliente?.nombre || "",
+      cliente_id: newForm.cliente_id,
+      fecha: newForm.fecha || new Date().toISOString().slice(0, 10),
+      hawb: newForm.hawb,
+      awb: newForm.awb,
+      origen: newForm.origen,
+      destino: newForm.destino,
+      dae: newForm.dae,
+      hbs: newForm.hbs,
+      variedad: "",
+      productos: [],
+      cajas,
+      qr_token: qrToken,
+    }).select().single();
+
+    if (error) { setCreateError(error.message); setCreatingShip(false); return; }
+
+    // Also create in coordinaciones so client can see it
+    await supabase.from("coordinaciones").insert({
+      cliente_id: newForm.cliente_id,
+      cliente_nombre: cliente?.nombre || "",
+      hawb: newForm.hawb,
+      awb: newForm.awb,
+      origen: newForm.origen,
+      destino: newForm.destino,
+      dae: newForm.dae,
+      hbs: parseInt(newForm.hbs) || 1,
+      fecha_salida: newForm.fecha || new Date().toISOString().slice(0, 10),
+      estado: "coordinado",
+      export_id: exportId,
+      qr_token: qrToken,
+      productos: [],
+      cajas,
+    });
+
+    setShipments(prev => [data as Exportacion, ...prev]);
+    setShowNew(false);
+    setNewForm({ cliente_id: "", hawb: "", awb: "", origen: "UIO", destino: "MIA", dae: "", hbs: "1", fecha: "", numBoxes: "1" });
+    setCreatingShip(false);
+  }
 
   const groups = groupShipments(shipments, clientes);
 
@@ -400,6 +468,10 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <span className="text-sm text-dim">{shipments.length} total records · {groups.length} clients</span>
           <div className="flex flex-wrap gap-2 sm:ml-auto">
+            <button onClick={() => setShowNew(!showNew)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-lg text-xs transition-all">
+              <Plus size={14} /> New Shipment
+            </button>
             <button onClick={downloadTemplate}
               className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-lg text-xs transition-all">
               <Download size={14} /> Template CSV
@@ -414,6 +486,77 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
           <p className={`text-xs mt-2 ${importMsg.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>{importMsg}</p>
         )}
       </Card>
+
+      {/* New Shipment Form */}
+      {showNew && (
+        <Card>
+          <form onSubmit={createShipment} className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-white">Create Shipment</p>
+              <button type="button" onClick={() => setShowNew(false)} className="text-dim hover:text-white"><X size={16} /></button>
+            </div>
+            {createError && <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{createError}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-dim mb-1">Client *</label>
+                <select value={newForm.cliente_id} onChange={e => setNewForm(p => ({ ...p, cliente_id: e.target.value }))} required
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent">
+                  <option value="">— Select client —</option>
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.empresa ? ` (${c.empresa})` : ""}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">HAWB</label>
+                <input value={newForm.hawb} onChange={e => setNewForm(p => ({ ...p, hawb: e.target.value }))}
+                  placeholder="HAWB number" className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">AWB</label>
+                <input value={newForm.awb} onChange={e => setNewForm(p => ({ ...p, awb: e.target.value }))}
+                  placeholder="AWB number" className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">Origin</label>
+                <input value={newForm.origen} onChange={e => setNewForm(p => ({ ...p, origen: e.target.value }))}
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">Destination</label>
+                <input value={newForm.destino} onChange={e => setNewForm(p => ({ ...p, destino: e.target.value }))}
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">DAE</label>
+                <input value={newForm.dae} onChange={e => setNewForm(p => ({ ...p, dae: e.target.value }))}
+                  placeholder="Export declaration" className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">HBs</label>
+                <input type="number" min={1} value={newForm.hbs} onChange={e => setNewForm(p => ({ ...p, hbs: e.target.value }))}
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">Departure Date</label>
+                <input type="date" value={newForm.fecha} onChange={e => setNewForm(p => ({ ...p, fecha: e.target.value }))}
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-xs text-dim mb-1">Number of Boxes</label>
+                <input type="number" min={1} value={newForm.numBoxes} onChange={e => setNewForm(p => ({ ...p, numBoxes: e.target.value }))}
+                  className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" disabled={creatingShip}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                {creatingShip ? "Creating..." : "Create Shipment"}
+              </button>
+              <button type="button" onClick={() => setShowNew(false)}
+                className="px-4 py-2 border border-white/10 rounded-lg text-sm text-dim hover:text-white">Cancel</button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Hierarchical list */}
       <div className="space-y-2">
