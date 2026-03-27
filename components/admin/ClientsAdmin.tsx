@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import type { Cliente } from "@/lib/types";
-import { Plus, UserCheck, UserX, Pencil, Trash2, X, Save, Loader2 } from "lucide-react";
+import { Plus, UserCheck, UserX, Pencil, Trash2, X, Save, Loader2, KeyRound } from "lucide-react";
 
 export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[] }) {
   const [clientes, setClientes] = useState(initial);
@@ -14,6 +14,9 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
   const [editForm, setEditForm] = useState({ nombre: "", empresa: "", email: "", username: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [resetPw, setResetPw] = useState<{ id: string; userId: string; nombre: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
   const supabase = createClient();
 
   async function createCliente(e: React.FormEvent) {
@@ -70,6 +73,18 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
     if (!confirm(`Delete client "${c.nombre}"? This cannot be undone.`)) return;
     const { error } = await supabase.from("clientes").delete().eq("id", c.id);
     if (!error) setClientes(prev => prev.filter(cl => cl.id !== c.id));
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetPw || newPassword.length < 6) { setError("Password must be at least 6 characters"); return; }
+    setResetting(true); setError("");
+    const { error: err } = await supabase.rpc("admin_reset_password", {
+      target_user_id: resetPw.userId,
+      new_password: newPassword,
+    });
+    if (err) { setError(err.message); setResetting(false); return; }
+    setResetPw(null); setNewPassword(""); setResetting(false);
   }
 
   return (
@@ -181,6 +196,10 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
                 <button onClick={() => startEdit(c)} className="text-dim hover:text-purple-400 transition-colors" title="Edit">
                   <Pencil size={16} />
                 </button>
+                <button onClick={() => { setResetPw({ id: c.id, userId: c.user_id, nombre: c.nombre }); setNewPassword(""); setError(""); }}
+                  className="text-dim hover:text-amber-400 transition-colors" title="Reset Password">
+                  <KeyRound size={16} />
+                </button>
                 <button onClick={() => deleteCliente(c)} className="text-dim hover:text-red-400 transition-colors" title="Delete">
                   <Trash2 size={16} />
                 </button>
@@ -189,6 +208,35 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
           </div>
         ))}
       </div>
+
+      {/* Reset Password Modal */}
+      {resetPw && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setResetPw(null)}>
+          <form onSubmit={handleResetPassword} className="bg-panel border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Reset Password</h3>
+              <button type="button" onClick={() => setResetPw(null)} className="text-dim hover:text-white"><X size={16} /></button>
+            </div>
+            <p className="text-xs text-dim">Set a new password for <span className="text-white font-semibold">{resetPw.nombre}</span></p>
+            {error && <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>}
+            <div>
+              <label className="block text-xs text-dim mb-1">New Password</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min. 6 characters" required minLength={6}
+                className="w-full bg-bg border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent" />
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" disabled={resetting || newPassword.length < 6}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                {resetting ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+                {resetting ? "Resetting..." : "Reset Password"}
+              </button>
+              <button type="button" onClick={() => setResetPw(null)}
+                className="px-4 py-2.5 border border-white/10 rounded-lg text-sm text-dim hover:text-white">Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
     </Card>
   );
 }
