@@ -18,18 +18,14 @@ export default function LoginPage() {
     // Resolve username → email if needed
     let email = username.trim();
     if (!email.includes("@")) {
-      // Look up email by username in clientes table
-      const { data } = await supabase
-        .from("clientes")
-        .select("email")
-        .eq("username", email.toLowerCase())
-        .single();
-      if (!data?.email) {
+      // Use RPC function that bypasses RLS to look up email by username
+      const { data } = await supabase.rpc("get_email_by_username", { p_username: email });
+      if (!data) {
         setError("Username not found");
         setLoading(false);
         return;
       }
-      email = data.email;
+      email = data as string;
     }
 
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
@@ -76,7 +72,7 @@ export default function LoginPage() {
                 required
                 autoComplete="username"
                 className="w-full bg-bg border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-dim focus:outline-none focus:border-accent transition-colors"
-                placeholder="username or email@company.com"
+                placeholder="Username or Email"
               />
             </div>
 
