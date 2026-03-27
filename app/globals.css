@@ -9,6 +9,20 @@
 
 * { box-sizing: border-box; }
 
+/* Anti-copy protection */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 body {
   background-color: #0f0f23;
   color: #e0e0e0;
