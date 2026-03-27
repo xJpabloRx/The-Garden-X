@@ -86,7 +86,7 @@ function QRResult({ result }: { result: QRData }) {
   );
 }
 
-export default function QRScanner({ clienteId }: { clienteId: string }) {
+export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: string; empresa: string; nombre: string }) {
   const [scanning, setScanning] = useState(false);
   const [result, setResult]     = useState<QRData | null>(null);
   const [error, setError]       = useState("");
@@ -114,21 +114,32 @@ export default function QRScanner({ clienteId }: { clienteId: string }) {
 
   /** Verify ownership: check cliente_id on exportaciones, coordinaciones, inventario */
   async function verifyOwnership(qrToken: string): Promise<boolean> {
-    // 1. Check exportaciones.cliente_id (new system)
+    // 1. Check exportaciones by cliente_id OR by empresa/nombre name match
     const { data: exp } = await supabase
       .from("exportaciones")
-      .select("id, cliente_id")
+      .select("id, cliente_id, cliente")
       .eq("qr_token", qrToken)
       .single();
-    if (exp?.cliente_id === clienteId) return true;
+    if (exp) {
+      if (exp.cliente_id === clienteId) return true;
+      // Match by empresa or nombre (case-insensitive)
+      const expCliente = (exp.cliente || "").toLowerCase().trim();
+      if (empresa && expCliente === empresa.toLowerCase().trim()) return true;
+      if (nombre && expCliente === nombre.toLowerCase().trim()) return true;
+    }
 
     // 2. Check coordinaciones
     const { data: coord } = await supabase
       .from("coordinaciones")
-      .select("id, cliente_id")
+      .select("id, cliente_id, cliente_nombre")
       .eq("qr_token", qrToken)
       .single();
-    if (coord?.cliente_id === clienteId) return true;
+    if (coord) {
+      if (coord.cliente_id === clienteId) return true;
+      const coordCliente = (coord.cliente_nombre || "").toLowerCase().trim();
+      if (empresa && coordCliente === empresa.toLowerCase().trim()) return true;
+      if (nombre && coordCliente === nombre.toLowerCase().trim()) return true;
+    }
 
     // 3. Check inventario
     const { data: inv } = await supabase

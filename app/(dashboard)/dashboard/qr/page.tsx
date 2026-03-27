@@ -6,7 +6,7 @@ export default async function QRPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: cliente } = await supabase
-    .from("clientes").select("id").eq("user_id", user!.id).single();
+    .from("clientes").select("id, empresa, nombre").eq("user_id", user!.id).single();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -14,7 +14,7 @@ export default async function QRPage() {
         <h1 className="text-2xl font-black text-white">QR Scanner</h1>
         <p className="text-dim text-sm mt-1">Scan a box QR code to verify its contents</p>
       </div>
-      <QRScanner clienteId={cliente?.id ?? ""} />
+      <QRScanner clienteId={cliente?.id ?? ""} empresa={cliente?.empresa ?? ""} nombre={cliente?.nombre ?? ""} />
     </div>
   );
 }
