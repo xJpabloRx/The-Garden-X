@@ -20,31 +20,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   // Block keyboard shortcuts for DevTools / View Source
   document.addEventListener('keydown',function(e){
-    // F12
     if(e.key==='F12'){e.preventDefault();return false;}
-    // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C
     if(e.ctrlKey&&e.shiftKey&&['I','J','C','i','j','c'].includes(e.key)){e.preventDefault();return false;}
-    // Ctrl+U (view source)
     if(e.ctrlKey&&(e.key==='u'||e.key==='U')){e.preventDefault();return false;}
-    // Ctrl+S (save page)
     if(e.ctrlKey&&(e.key==='s'||e.key==='S')){e.preventDefault();return false;}
   });
 
-  // Disable text selection and drag
+  // Disable text selection and drag (except inputs)
   document.addEventListener('selectstart',function(e){
     if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;
     e.preventDefault();
   });
   document.addEventListener('dragstart',function(e){e.preventDefault();});
-
-  // DevTools detection — redirect or clear page
-  var threshold=160;
-  function checkDevTools(){
-    var w=window.outerWidth-window.innerWidth>threshold;
-    var h=window.outerHeight-window.innerHeight>threshold;
-    if(w||h){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a1a;color:#ef4444;font-family:monospace;font-size:1.2rem;text-align:center;padding:2rem;">Access denied.<br>Developer tools are not allowed.</div>';}
-  }
-  setInterval(checkDevTools,1000);
 })();
 `,
           }}
