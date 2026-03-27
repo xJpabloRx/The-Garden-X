@@ -21,9 +21,14 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
 
   async function createCliente(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.username.trim()) { setError("Username is required"); setSaving(false); return; }
     setSaving(true); setError("");
+
+    // If no email provided, generate one from username
+    const authEmail = form.email.trim() || `${form.username.trim().toLowerCase()}@thegardenx.local`;
+
     const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email: form.email,
+      email: authEmail,
       password: form.password,
       options: { data: { nombre: form.nombre } },
     });
@@ -32,8 +37,8 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
       user_id: authData.user?.id,
       nombre: form.nombre,
       empresa: form.empresa || null,
-      email: form.email,
-      username: form.username.toLowerCase() || null,
+      email: authEmail,
+      username: form.username.trim().toLowerCase(),
     }).select().single();
     if (dbErr) { setError(dbErr.message); setSaving(false); return; }
     setClientes(prev => [newCliente as Cliente, ...prev]);
@@ -107,7 +112,7 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
               { label: "Full Name *", key: "nombre", type: "text", ph: "Full name" },
               { label: "Company", key: "empresa", type: "text", ph: "Company (optional)" },
               { label: "Username *", key: "username", type: "text", ph: "username" },
-              { label: "Email *", key: "email", type: "email", ph: "client@company.com" },
+              { label: "Email", key: "email", type: "email", ph: "Optional — auto-generated if empty" },
               { label: "Password *", key: "password", type: "password", ph: "Min. 6 characters" },
             ] as const).map(f => (
               <div key={f.key}>
@@ -180,7 +185,7 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
                   <p className="text-sm font-semibold text-white">{c.nombre}</p>
                   <p className="text-xs text-dim truncate">
                     {c.username && <span className="text-cyan-400 mr-2">@{c.username}</span>}
-                    {c.email}
+                    {c.email && !c.email.endsWith("@thegardenx.local") && c.email}
                     {c.empresa && ` · ${c.empresa}`}
                   </p>
                 </div>
