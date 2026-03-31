@@ -43,20 +43,21 @@ export default function VarietiesAdmin({ variedades: initial }: { variedades: Va
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) { setUploadMsg("CSV must have a header + at least 1 row"); setUploading(false); return; }
 
-    const header = lines[0].toLowerCase().split(",").map(h => h.trim());
+    const header = lines[0].toLowerCase().split(",").map(h => h.trim().replace(/^"+|"+$/g, ""));
     const nameIdx = header.indexOf("nombre");
     const colorIdx = header.indexOf("color");
     if (nameIdx === -1) { setUploadMsg("CSV must have a 'nombre' column"); setUploading(false); return; }
 
+    const strip = (s: string) => s.replace(/^"+|"+$/g, "").trim();
     const rows: { nombre: string; color: string }[] = [];
-    const existingNames = new Set(variedades.map(v => v.nombre.toLowerCase()));
+    const existingNames = new Set(variedades.map(v => strip(v.nombre).toLowerCase()));
 
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(",").map(c => c.trim());
+      const cols = lines[i].split(",").map(c => strip(c));
       const n = cols[nameIdx];
       const c = colorIdx >= 0 ? (cols[colorIdx] || "") : "";
       if (!n) continue;
-      if (existingNames.has(n.toLowerCase())) continue; // skip duplicates
+      if (existingNames.has(n.toLowerCase())) continue;
       existingNames.add(n.toLowerCase());
       rows.push({ nombre: n, color: c });
     }
@@ -93,7 +94,11 @@ export default function VarietiesAdmin({ variedades: initial }: { variedades: Va
       <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b border-white/5">
         <button onClick={() => {
             const rows = ["nombre,color"];
-            for (const v of variedades) rows.push(`"${v.nombre.replace(/"/g, '""')}","${(v.color || "").replace(/"/g, '""')}"`);
+            for (const v of variedades) {
+              const n = v.nombre.replace(/^"+|"+$/g, "").replace(/,/g, " ");
+              const c = (v.color || "").replace(/^"+|"+$/g, "").replace(/,/g, " ");
+              rows.push(`${n},${c}`);
+            }
             const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
             const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
             a.download = "varieties.csv"; a.click();
