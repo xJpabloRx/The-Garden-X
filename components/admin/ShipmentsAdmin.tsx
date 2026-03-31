@@ -152,6 +152,8 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set()); // "shipId|boxIdx"
   const [bulkDetails, setBulkDetails] = useState<BoxDetail[]>([]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
 
   // New shipment not needed — shipments come from Pilot X
   // Auto-linking is handled by DB triggers matching exportaciones.cliente ↔ clientes.empresa
@@ -326,6 +328,18 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
       const next = new Set(prev);
       if (allSelected) { keys.forEach(k => next.delete(k)); }
       else { keys.forEach(k => next.add(k)); }
+      return next;
+    });
+  }
+
+  function selectRange(allCajas: { ship: Exportacion; box: CajaItem; boxIdx: number }[], from: number, to: number) {
+    if (from > to) [from, to] = [to, from];
+    setBulkSelected(prev => {
+      const next = new Set(prev);
+      for (const c of allCajas) {
+        const num = Number(c.box.caja);
+        if (num >= from && num <= to) next.add(`${c.ship.id}|${c.boxIdx}`);
+      }
       return next;
     });
   }
@@ -513,12 +527,19 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                                   : <Square size={14} />}
                                 Select All
                               </button>
-                              {bulkSelected.size > 0 && !bulkMode && (
-                                <button onClick={startBulkEdit}
-                                  className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 border border-purple-400/20 hover:border-purple-400/40 px-2 py-1 rounded transition-all">
-                                  <Layers size={12} /> Bulk Edit ({bulkSelected.size})
+                              <div className="flex items-center gap-1 text-xs text-dim">
+                                <span>Range:</span>
+                                <input type="number" min={1} value={rangeFrom} onChange={e => setRangeFrom(e.target.value)}
+                                  placeholder="From" className="w-14 bg-panel border border-white/10 rounded px-1.5 py-1 text-xs text-white text-center focus:outline-none focus:border-accent" />
+                                <span>→</span>
+                                <input type="number" min={1} value={rangeTo} onChange={e => setRangeTo(e.target.value)}
+                                  placeholder="To" className="w-14 bg-panel border border-white/10 rounded px-1.5 py-1 text-xs text-white text-center focus:outline-none focus:border-accent" />
+                                <button onClick={() => { if (rangeFrom && rangeTo) { selectRange(allCajas, parseInt(rangeFrom), parseInt(rangeTo)); setRangeFrom(""); setRangeTo(""); } }}
+                                  disabled={!rangeFrom || !rangeTo}
+                                  className="px-2 py-1 text-xs text-cyan-400 border border-cyan-400/20 hover:border-cyan-400/40 rounded transition-all disabled:opacity-30">
+                                  Apply
                                 </button>
-                              )}
+                              </div>
                               {bulkSelected.size > 0 && (
                                 <button onClick={() => setBulkSelected(new Set())}
                                   className="text-xs text-dim hover:text-white transition-colors">Clear</button>
@@ -684,6 +705,21 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
           );
         })}
       </div>
+
+      {/* Floating bulk edit bar */}
+      {bulkSelected.size > 0 && !bulkMode && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 lg:left-[calc(50%+8rem)] z-40 bg-panel border border-purple-400/30 rounded-2xl shadow-2xl shadow-purple-500/10 px-5 py-3 flex items-center gap-3 animate-fade-in">
+          <span className="text-xs text-purple-400 font-mono font-bold">{bulkSelected.size} selected</span>
+          <button onClick={startBulkEdit}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-black font-bold rounded-lg text-xs transition-all hover:from-purple-400 hover:to-cyan-400">
+            <Layers size={14} /> Bulk Edit
+          </button>
+          <button onClick={() => setBulkSelected(new Set())}
+            className="text-xs text-dim hover:text-white px-2 py-1 border border-white/10 rounded-lg transition-all">
+            Clear
+          </button>
+        </div>
+      )}
     </div>
   );
 }
