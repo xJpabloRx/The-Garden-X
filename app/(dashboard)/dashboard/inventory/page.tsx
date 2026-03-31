@@ -74,20 +74,27 @@ export default async function InventoryPage() {
   }
 
   // Now map inventory records to their products
-  // inventario.coordinacion_id can be a coord id, an export id, or null
-  // We build a direct map: inventarioId → BoxProducts
   const invProductsMap: Record<string, BoxProducts> = {};
   for (const inv of (inventario ?? [])) {
     const cid = inv.coordinacion_id || "";
     const caja = inv.caja_numero ?? 0;
-    // Try direct match (coord id or export id)
-    let prods = boxProductsMap[`${cid}|${caja}`];
-    // If not found and cid is a coord, try its linked export id
+    let prods: BoxProducts | undefined;
+
+    // Try direct match by coordinacion_id
+    if (cid) prods = boxProductsMap[`${cid}|${caja}`];
+    // Try via linked export_id
     if (!prods && cid && coordExportMap[cid]) {
       prods = boxProductsMap[`${coordExportMap[cid]}|${caja}`];
     }
-    // If not found and cid is empty, try all export ids for this client
-    if (!prods && !cid) {
+    // Try all coordinaciones for this box number
+    if (!prods) {
+      for (const c of (coords ?? [])) {
+        const candidate = boxProductsMap[`${c.id}|${caja}`];
+        if (candidate) { prods = candidate; break; }
+      }
+    }
+    // Try all exportaciones for this box number
+    if (!prods) {
       for (const e of (exps ?? [])) {
         const candidate = boxProductsMap[`${e.id}|${caja}`];
         if (candidate) { prods = candidate; break; }

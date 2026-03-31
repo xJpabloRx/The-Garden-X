@@ -88,10 +88,8 @@ export default function CoordinacionesClient({
           ? prodTotal
           : (parseInt(String(caja.cantidad)) || parseInt(String(caja.bunch)) || 25);
 
-        // Determine variedad from products or fallback
-        const mainVariedad = prods.length > 0
-          ? prods.map(p => p.variedad || "").filter(Boolean).join(", ") || coord.variedad || null
-          : coord.variedad || null;
+        // Determine variedad: use box title (BCOLOR, BROJO, etc.) not product list
+        const mainVariedad = String(caja.titulo || "").replace(/^B/i, "") || coord.variedad || null;
 
         const { data: inv, error: invErr } = await supabase.from("inventario").insert({
           cliente_id: clienteId,
