@@ -65,8 +65,6 @@ export default async function DashboardPage() {
           // Parse cajas
           let cajas = e.cajas;
           if (typeof cajas === "string") try { cajas = JSON.parse(cajas); } catch { cajas = []; }
-          let productos = e.productos;
-          if (typeof productos === "string") try { productos = JSON.parse(productos); } catch { productos = []; }
 
           grouped.set(key, {
             id: e.id,
@@ -84,7 +82,7 @@ export default async function DashboardPage() {
             estado: "coordinado",
             qr_token: e.qr_token,
             export_id: e.export_id,
-            productos: Array.isArray(productos) ? productos : [],
+            productos: [], // not used — products are inside cajas[].productos
             cajas: Array.isArray(cajas) ? cajas : [],
             inventario_creado: !!e.inventario_creado,
             created_at: e.created_at,

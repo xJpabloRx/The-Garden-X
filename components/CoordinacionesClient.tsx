@@ -81,13 +81,12 @@ export default function CoordinacionesClient({
           ? (caja.productos as { tipo?: string; variedad?: string; cantidad?: number; stem_length?: string; color?: string }[])
           : [];
         const esBonche = String(caja.titulo ?? "").toLowerCase().includes("bonche");
-        const stemsPorUnit = esBonche ? 25 : 12;
 
-        // Calculate total: sum of product quantities × stems, or fallback
-        const prodTotal = prods.reduce((s, p) => s + (Number(p.cantidad) || 0) * stemsPorUnit, 0);
+        // Calculate total: sum of product quantities (units, not stems)
+        const prodTotal = prods.reduce((s, p) => s + (Number(p.cantidad) || 0), 0);
         const cantidadTotal = prodTotal > 0
           ? prodTotal
-          : (parseInt(String(caja.cantidad)) || stemsPorUnit);
+          : (parseInt(String(caja.cantidad)) || parseInt(String(caja.bunch)) || 25);
 
         // Determine variedad from products or fallback
         const mainVariedad = prods.length > 0
@@ -116,23 +115,24 @@ export default function CoordinacionesClient({
         if (prods.length > 0) {
           for (const p of prods) {
             const qty = Number(p.cantidad) || 1;
+            const tipo = p.tipo || (esBonche ? "bonche" : "bouquet");
             for (let j = 0; j < qty; j++) {
               items.push({
                 inventario_id: inv.id,
-                descripcion: `${p.tipo || (esBonche ? "bonche" : "bouquet")} ${p.variedad || ""} SL:${p.stem_length || ""} ${p.color || ""}`.trim(),
-                cantidad: stemsPorUnit,
+                descripcion: `${tipo} ${p.variedad || ""} SL:${p.stem_length || ""} ${p.color || ""}`.trim(),
+                cantidad: 1,
                 vendido: false,
               });
             }
           }
         } else {
           // No detailed products — create generic items
-          const count = Math.max(1, Math.floor(cantidadTotal / stemsPorUnit));
+          const count = cantidadTotal;
           for (let j = 0; j < count; j++) {
             items.push({
               inventario_id: inv.id,
-              descripcion: `${esBonche ? "1 bunch" : "1 bouquet"} ${mainVariedad ?? ""}`.trim(),
-              cantidad: stemsPorUnit,
+              descripcion: `${esBonche ? "bonche" : "bouquet"} ${mainVariedad ?? ""}`.trim(),
+              cantidad: 1,
               vendido: false,
             });
           }

@@ -31,7 +31,7 @@ function QRResult({ result }: { result: QRData }) {
   const products: Record<string, unknown>[] = cajaProducts.length > 0
     ? cajaProducts
     : (caja && caja.tipo && caja.variedad) ? [caja]
-    : (Array.isArray(result.productos) ? result.productos as Record<string, unknown>[] : []);
+    : [];
 
   return (
     <div className="space-y-3 animate-fade-in text-sm">
