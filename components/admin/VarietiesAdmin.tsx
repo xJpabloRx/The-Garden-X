@@ -91,10 +91,16 @@ export default function VarietiesAdmin({ variedades: initial }: { variedades: Va
 
       {/* CSV Upload */}
       <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b border-white/5">
-        <a href="/variety_template.csv" download
+        <button onClick={() => {
+            const rows = ["nombre,color"];
+            for (const v of variedades) rows.push(`"${v.nombre.replace(/"/g, '""')}","${(v.color || "").replace(/"/g, '""')}"`);
+            const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+            a.download = "varieties.csv"; a.click();
+          }}
           className="flex items-center gap-2 px-3 py-1.5 text-xs text-purple-400 border border-purple-400/20 hover:border-purple-400/40 rounded-lg transition-all">
-          <Download size={12} /> Download Template
-        </a>
+          <Download size={12} /> Download CSV
+        </button>
         <label className={`flex items-center gap-2 px-3 py-1.5 text-xs text-cyan-400 border border-cyan-400/20 hover:border-cyan-400/40 rounded-lg transition-all cursor-pointer ${uploading ? "opacity-40 pointer-events-none" : ""}`}>
           {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
           Import CSV
