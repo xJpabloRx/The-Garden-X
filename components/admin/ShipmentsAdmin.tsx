@@ -392,6 +392,28 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
     setBulkDetails([]);
   }
 
+  function downloadShipmentCSV(clienteName: string, dg: DateGroup) {
+    const allBoxes = dg.shipments.flatMap(s => parseCajas(s.cajas).map((c, ci) => ({ ship: s, box: c, boxIdx: ci })));
+    allBoxes.sort((a, b) => Number(a.box.caja) - Number(b.box.caja));
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows: string[] = ["hawb,awb,box,tipo,variedad,cantidad,stem_length,color"];
+    for (const { box } of allBoxes) {
+      const prods = Array.isArray(box.productos) ? (box.productos as BoxDetail[]) : [];
+      if (prods.length > 0) {
+        for (const p of prods) {
+          rows.push([dg.hawb, dg.awb, box.caja, p.tipo, p.variedad, p.cantidad, p.stem_length, p.color].map(esc).join(","));
+        }
+      } else {
+        rows.push([dg.hawb, dg.awb, box.caja, "", box.titulo || "", "", box.stem_length || "", ""].map(esc).join(","));
+      }
+    }
+    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${clienteName.replace(/\s+/g, "_")}_${dg.hawb || "shipment"}_${dg.fecha || "nodate"}.csv`;
+    a.click();
+  }
+
   if (loading) return (
     <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-cyan-400" /></div>
   );
@@ -456,6 +478,11 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                           <span className="text-xs font-mono text-cyan-400">{dg.fecha || "No date"}</span>
                           <span className="text-xs text-dim">HAWB: {dg.hawb || "—"}</span>
                           <span className="text-xs text-dim hidden sm:inline">AWB: {dg.awb || "—"}</span>
+                          <button onClick={(e) => { e.stopPropagation(); downloadShipmentCSV(cg.clienteName, dg); }}
+                            className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 border border-green-400/20 hover:border-green-400/40 px-2 py-1 rounded transition-all ml-1"
+                            title="Download shipment as CSV">
+                            <Download size={12} /> CSV
+                          </button>
                           <span className="ml-auto text-xs text-purple-400">{allCajas.length} box{allCajas.length !== 1 ? "es" : ""}</span>
                         </div>
 
