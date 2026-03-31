@@ -332,12 +332,12 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
   function startBulkEdit() {
     if (bulkSelected.size === 0) return;
-    setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "", color: "" }]);
+    setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "50", color: "" }]);
     setBulkMode(true);
   }
 
   function addBulkDetail() {
-    setBulkDetails(prev => [...prev, { tipo: "bouquet", variedad: "", cantidad: 1, stem_length: "", color: "" }]);
+    setBulkDetails(prev => [...prev, { tipo: "bouquet", variedad: "", cantidad: 1, stem_length: "50", color: "" }]);
   }
 
   function updateBulkDetail(idx: number, field: keyof BoxDetail, value: string | number) {
@@ -519,7 +519,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                                 <p className="text-xs text-dim">Products defined here will replace contents of all selected boxes.</p>
                                 {bulkDetails.map((d, di) => (
                                   <div key={di} className="flex flex-wrap items-center gap-2">
-                                    <select value={d.tipo} onChange={e => updateBulkDetail(di, "tipo", e.target.value)}
+                                    <select value={d.tipo} onChange={e => { updateBulkDetail(di, "tipo", e.target.value); if (e.target.value === "bouquet") updateBulkDetail(di, "stem_length", "50"); }}
                                       className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-white w-20 sm:w-24">
                                       <option value="bouquet">Bouquet</option>
                                       <option value="bonche">Bonche</option>
@@ -611,7 +611,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                                     <div className="mt-3 space-y-2 animate-fade-in">
                                       {boxDetails.map((d, di) => (
                                         <div key={di} className="flex flex-wrap items-center gap-2">
-                                          <select value={d.tipo} onChange={e => updateDetail(di, "tipo", e.target.value)}
+                                          <select value={d.tipo} onChange={e => { updateDetail(di, "tipo", e.target.value); if (e.target.value === "bouquet") updateDetail(di, "stem_length", "50"); }}
                                             className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-white w-20 sm:w-24">
                                             <option value="bouquet">Bouquet</option>
                                             <option value="bonche">Bonche</option>
