@@ -332,7 +332,23 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
   function startBulkEdit() {
     if (bulkSelected.size === 0) return;
-    setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "50", color: "" }]);
+
+    // Load existing products from the first selected box as starting point
+    const firstKey = Array.from(bulkSelected)[0];
+    const [shipId, boxIdxStr] = firstKey.split("|");
+    const ship = shipments.find(s => s.id === shipId);
+    if (ship) {
+      const cajas = parseCajas(ship.cajas);
+      const box = cajas[parseInt(boxIdxStr)];
+      const existing = Array.isArray(box?.productos) ? (box.productos as BoxDetail[]) : [];
+      if (existing.length > 0) {
+        setBulkDetails(existing.map(d => ({ ...d })));
+      } else {
+        setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "50", color: "" }]);
+      }
+    } else {
+      setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "50", color: "" }]);
+    }
     setBulkMode(true);
   }
 
