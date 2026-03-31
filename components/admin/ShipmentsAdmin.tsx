@@ -586,18 +586,18 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                               const isEditing = editingBox?.shipId === ship.id && editingBox?.boxIdx === boxIdx;
 
                               return (
-                                <div key={bi} className={`border rounded-lg p-3 ${bulkSelected.has(`${ship.id}|${boxIdx}`) ? "border-purple-400/30 bg-purple-400/5" : "border-white/5"}`}>
+                                <div key={bi} onClick={() => toggleBulkSelect(ship.id, boxIdx)}
+                                  className={`border rounded-lg p-3 cursor-pointer transition-all hover:bg-white/2 ${bulkSelected.has(`${ship.id}|${boxIdx}`) ? "border-purple-400/30 bg-purple-400/5" : "border-white/5"}`}>
                                   <div className="flex items-center gap-3">
-                                    <button onClick={(e) => { e.stopPropagation(); toggleBulkSelect(ship.id, boxIdx); }}
-                                      className="flex-shrink-0 text-dim hover:text-purple-400 transition-colors">
+                                    <span className="flex-shrink-0">
                                       {bulkSelected.has(`${ship.id}|${boxIdx}`)
                                         ? <CheckSquare size={16} className="text-purple-400" />
-                                        : <Square size={16} />}
-                                    </button>
+                                        : <Square size={16} className="text-dim" />}
+                                    </span>
                                     <span className="text-xs font-mono text-cyan-400 font-bold">Box {box.caja}</span>
                                     <span className="text-xs text-white flex-1 truncate">{box.titulo || "—"}</span>
                                     {box.stem_length && <span className="text-xs text-dim">SL: {box.stem_length}</span>}
-                                    <button onClick={() => isEditing ? setEditingBox(null) : startEditBox(ship, boxIdx)}
+                                    <button onClick={(e) => { e.stopPropagation(); isEditing ? setEditingBox(null) : startEditBox(ship, boxIdx); }}
                                       className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
                                       {isEditing ? <X size={12} /> : <Pencil size={12} />}
                                       {isEditing ? "Cancel" : "Edit"}
