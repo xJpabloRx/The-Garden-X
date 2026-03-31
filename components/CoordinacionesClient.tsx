@@ -54,114 +54,113 @@ export default function CoordinacionesClient({
   async function moveToInventory(coord: Coordinacion) {
     if (coord.inventario_creado || loading) return;
     setLoading(coord.id);
-    // Immediately mark as created locally to prevent double-click
     setCoordinaciones(prev =>
       prev.map(c => c.id === coord.id ? { ...c, inventario_creado: true } : c)
     );
     setError("");
     try {
-      // DB-level guard: check if inventory already exists for this coordinacion
-      // Check by coordinacion_id first, then by qr_token as fallback
+      // DB-level guard: check if inventory already exists
       const { data: existById } = await supabase
-        .from("inventario")
-        .select("id")
-        .eq("coordinacion_id", coord.id)
-        .limit(1);
-      if (existById && existById.length > 0) {
-        // Already moved — just keep the local flag true
-        setLoading(null);
-        return;
-      }
-      // Fallback: check by qr_token if it exists
+        .from("inventario").select("id").eq("coordinacion_id", coord.id).limit(1);
+      if (existById && existById.length > 0) { setLoading(null); return; }
       if (coord.qr_token) {
         const { data: existByQr } = await supabase
-          .from("inventario")
-          .select("id")
-          .eq("qr_token", coord.qr_token)
-          .eq("cliente_id", clienteId)
-          .limit(1);
-        if (existByQr && existByQr.length > 0) {
-          setLoading(null);
-          return;
-        }
+          .from("inventario").select("id").eq("qr_token", coord.qr_token).eq("cliente_id", clienteId).limit(1);
+        if (existByQr && existByQr.length > 0) { setLoading(null); return; }
       }
 
       const cajas = parseCajas(coord.cajas);
 
-      const rows = cajas.map((caja) => {
-        const esBonche = String(caja.titulo ?? "").toLowerCase().includes("bonche");
-        const prods = Array.isArray(caja.productos) ? caja.productos as { cantidad: number }[] : [];
-        // cantidad_total = sum of all product quantities inside the box
-        // If no products defined, fall back to caja.cantidad or stems per box
-        const stemsPorCaja = esBonche ? 25 : 12;
-        const prodTotal = prods.reduce((s, p) => s + (Number(p.cantidad) || 0), 0);
-        const cantidad = prodTotal > 0
-          ? prodTotal
-          : (typeof caja.cantidad === "string" ? parseInt(caja.cantidad) || stemsPorCaja : (caja.cantidad as number) ?? stemsPorCaja);
-
-        return {
-          cliente_id:      clienteId,
-          coordinacion_id: null as string | null,  // set below if valid
-          caja_numero:     caja.caja,
-          tipo_caja:       esBonche ? "bonche" : "bouquet",
-          categoria:       String(caja.titulo ?? "").toLowerCase().includes("rojo") ? "rojo" : "color",
-          variedad:        coord.variedad ?? null,
-          cantidad_total:  cantidad,
-          cantidad_vendida: 0,
-          estado_caja:     "disponible",
-          qr_token:        coord.qr_token ?? null,
-          notas:           caja.composicion ?? null,
-        };
-      });
-
-      if (rows.length === 0) {
-        rows.push({
-          cliente_id:      clienteId,
-          coordinacion_id: null as string | null,
-          caja_numero:     1,
-          tipo_caja:       "bouquet",
-          categoria:       "color",
-          variedad:        coord.variedad ?? null,
-          cantidad_total:  (coord.hbs ?? 1) * 12,
-          cantidad_vendida: 0,
-          estado_caja:     "disponible",
-          qr_token:        coord.qr_token ?? null,
-          notas:           null,
-        });
-      }
-
-      // Check if coord.id exists in coordinaciones table (not a virtual entry from exportaciones)
+      // Check if coord.id exists in coordinaciones table
       const { data: realCoord } = await supabase
         .from("coordinaciones").select("id").eq("id", coord.id).single();
-      if (realCoord) {
-        rows.forEach(r => { r.coordinacion_id = coord.id; });
-      }
+      const coordId = realCoord ? coord.id : null;
 
-      const { data: invRows, error: invErr } = await supabase
-        .from("inventario").insert(rows).select("id, caja_numero, tipo_caja, variedad, cantidad_total");
+      for (const caja of cajas) {
+        const prods = Array.isArray(caja.productos)
+          ? (caja.productos as { tipo?: string; variedad?: string; cantidad?: number; stem_length?: string; color?: string }[])
+          : [];
+        const esBonche = String(caja.titulo ?? "").toLowerCase().includes("bonche");
+        const stemsPorUnit = esBonche ? 25 : 12;
 
-      if (invErr) { setError(`Inventory insert: ${invErr.message}`); throw invErr; }
+        // Calculate total: sum of product quantities × stems, or fallback
+        const prodTotal = prods.reduce((s, p) => s + (Number(p.cantidad) || 0) * stemsPorUnit, 0);
+        const cantidadTotal = prodTotal > 0
+          ? prodTotal
+          : (parseInt(String(caja.cantidad)) || stemsPorUnit);
 
-      if (invRows) {
-        const items = invRows.flatMap((inv) => {
-          const stemsPorCaja = inv.tipo_caja === "bonche" ? 25 : 12;
-          const count = Math.max(1, Math.floor(inv.cantidad_total / stemsPorCaja));
-          return Array.from({ length: count }, () => ({
-            inventario_id: inv.id,
-            descripcion: `${inv.tipo_caja === "bonche" ? "1 bunch" : "1 bouquet"} ${inv.variedad ?? ""}`.trim(),
-            cantidad: stemsPorCaja,
-            vendido: false,
-          }));
-        });
+        // Determine variedad from products or fallback
+        const mainVariedad = prods.length > 0
+          ? prods.map(p => p.variedad || "").filter(Boolean).join(", ") || coord.variedad || null
+          : coord.variedad || null;
+
+        const { data: inv, error: invErr } = await supabase.from("inventario").insert({
+          cliente_id: clienteId,
+          coordinacion_id: coordId,
+          caja_numero: caja.caja,
+          tipo_caja: esBonche ? "bonche" : "bouquet",
+          categoria: String(caja.titulo ?? "").toLowerCase().includes("rojo") ? "rojo" : "color",
+          variedad: mainVariedad,
+          cantidad_total: cantidadTotal,
+          cantidad_vendida: 0,
+          estado_caja: "disponible",
+          qr_token: coord.qr_token ?? null,
+          notas: caja.composicion ?? null,
+        }).select("id").single();
+
+        if (invErr) { setError(`Box ${caja.caja}: ${invErr.message}`); continue; }
+        if (!inv) continue;
+
+        // Create inventory_items from detailed products
+        const items: { inventario_id: string; descripcion: string; cantidad: number; vendido: boolean }[] = [];
+        if (prods.length > 0) {
+          for (const p of prods) {
+            const qty = Number(p.cantidad) || 1;
+            for (let j = 0; j < qty; j++) {
+              items.push({
+                inventario_id: inv.id,
+                descripcion: `${p.tipo || (esBonche ? "bonche" : "bouquet")} ${p.variedad || ""} SL:${p.stem_length || ""} ${p.color || ""}`.trim(),
+                cantidad: stemsPorUnit,
+                vendido: false,
+              });
+            }
+          }
+        } else {
+          // No detailed products — create generic items
+          const count = Math.max(1, Math.floor(cantidadTotal / stemsPorUnit));
+          for (let j = 0; j < count; j++) {
+            items.push({
+              inventario_id: inv.id,
+              descripcion: `${esBonche ? "1 bunch" : "1 bouquet"} ${mainVariedad ?? ""}`.trim(),
+              cantidad: stemsPorUnit,
+              vendido: false,
+            });
+          }
+        }
         if (items.length > 0) {
-          const { error: itemErr } = await supabase.from("inventario_items").insert(items);
-          if (itemErr) { setError(`Items insert: ${itemErr.message}`); }
+          await supabase.from("inventario_items").insert(items);
         }
       }
 
-      // Mark as moved — update coordinaciones and exportaciones
-      await supabase
-        .from("coordinaciones").update({ inventario_creado: true }).eq("id", coord.id);
+      // If no cajas at all, create a single fallback entry
+      if (cajas.length === 0) {
+        await supabase.from("inventario").insert({
+          cliente_id: clienteId,
+          coordinacion_id: coordId,
+          caja_numero: 1,
+          tipo_caja: "bouquet",
+          categoria: "color",
+          variedad: coord.variedad ?? null,
+          cantidad_total: (coord.hbs ?? 1) * 12,
+          cantidad_vendida: 0,
+          estado_caja: "disponible",
+          qr_token: coord.qr_token ?? null,
+          notas: null,
+        });
+      }
+
+      // Mark as moved
+      await supabase.from("coordinaciones").update({ inventario_creado: true }).eq("id", coord.id);
       // Also mark on exportaciones (the source of truth for most clients)
       await supabase
         .from("exportaciones").update({ inventario_creado: true }).eq("id", coord.id);
