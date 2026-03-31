@@ -540,8 +540,8 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                                       onChange={e => updateBulkDetail(di, "stem_length", e.target.value)}
                                       placeholder="SL"
                                       className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-white w-14 sm:w-16" />
-                                    <input value={d.color} readOnly placeholder="Color"
-                                      className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-dim w-16 sm:w-20" />
+                                    <input value={d.color} onChange={e => updateBulkDetail(di, "color", e.target.value)} placeholder="Color"
+                                      className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-purple-400 w-16 sm:w-20" />
                                     <button onClick={() => removeBulkDetail(di)} className="text-dim hover:text-red-400">
                                       <Trash2 size={14} />
                                     </button>
@@ -632,9 +632,10 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                                             onChange={e => updateDetail(di, "stem_length", e.target.value)}
                                             placeholder="SL"
                                             className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-white w-14 sm:w-16" />
-                                          <input value={d.color} readOnly
+                                          <input value={d.color}
+                                            onChange={e => updateDetail(di, "color", e.target.value)}
                                             placeholder="Color"
-                                            className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-dim w-16 sm:w-20" />
+                                            className="bg-panel border border-white/10 rounded px-2 py-1.5 text-xs text-purple-400 w-16 sm:w-20" />
                                           <button onClick={() => removeDetail(di)} className="text-dim hover:text-red-400">
                                             <Trash2 size={14} />
                                           </button>
