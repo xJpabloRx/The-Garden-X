@@ -96,6 +96,7 @@ export type Inventario = {
   estado_caja: "disponible" | "parcial" | "vendida";
   qr_token?: string;
   notas?: string;
+  productos?: { tipo: string; variedad: string; cantidad: number; stem_length: string; color: string }[];
   created_at: string;
   inventario_items?: InventarioItem[];
 };

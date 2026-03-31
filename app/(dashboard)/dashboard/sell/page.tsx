@@ -29,53 +29,25 @@ export default async function SellPage() {
   const shipLookup: Record<string, ShipInfo> = {};
 
   const { data: coords } = await supabase
-    .from("coordinaciones").select("id, hawb, awb, fecha_salida, cajas, export_id")
+    .from("coordinaciones").select("id, hawb, awb, fecha_salida")
     .eq("cliente_id", clienteId);
   for (const c of (coords ?? [])) {
     shipLookup[c.id] = { hawb: c.hawb || "", awb: c.awb || "", fecha: c.fecha_salida || "" };
   }
   const { data: exps } = await supabase
-    .from("exportaciones").select("id, hawb, awb, fecha, cajas")
+    .from("exportaciones").select("id, hawb, awb, fecha")
     .eq("cliente_id", clienteId);
-  const coordExportMap: Record<string, string> = {};
-  for (const c of (coords ?? [])) { if (c.export_id) coordExportMap[c.id] = c.export_id; }
   for (const e of (exps ?? [])) {
     if (!shipLookup[e.id]) shipLookup[e.id] = { hawb: e.hawb || "", awb: e.awb || "", fecha: e.fecha || "" };
   }
 
-  // Build invProductsMap
+  // Build invProductsMap directly from inventario.productos
   type BoxProduct = { tipo: string; variedad: string; cantidad: number; stem_length: string; color: string };
-  const boxProductsMap: Record<string, BoxProduct[]> = {};
-  for (const e of (exps ?? [])) {
-    let cajas = e.cajas;
-    if (typeof cajas === "string") try { cajas = JSON.parse(cajas); } catch { cajas = []; }
-    if (Array.isArray(cajas)) {
-      for (const box of cajas) {
-        const prods = Array.isArray(box.productos) ? box.productos : [];
-        if (prods.length > 0) boxProductsMap[`${e.id}|${box.caja}`] = prods as BoxProduct[];
-      }
-    }
-  }
-  for (const c of (coords ?? [])) {
-    let cajas = c.cajas;
-    if (typeof cajas === "string") try { cajas = JSON.parse(cajas); } catch { cajas = []; }
-    if (Array.isArray(cajas)) {
-      for (const box of cajas) {
-        const prods = Array.isArray(box.productos) ? box.productos : [];
-        if (prods.length > 0) boxProductsMap[`${c.id}|${box.caja}`] = prods as BoxProduct[];
-      }
-    }
-  }
   const invProductsMap: Record<string, BoxProduct[]> = {};
   for (const inv of (inventario ?? [])) {
-    const cid = inv.coordinacion_id || "";
-    const caja = inv.caja_numero ?? 0;
-    let prods = boxProductsMap[`${cid}|${caja}`];
-    if (!prods && cid && coordExportMap[cid]) prods = boxProductsMap[`${coordExportMap[cid]}|${caja}`];
-    if (!prods && !cid) {
-      for (const e of (exps ?? [])) { const c = boxProductsMap[`${e.id}|${caja}`]; if (c) { prods = c; break; } }
+    if (Array.isArray(inv.productos) && inv.productos.length > 0) {
+      invProductsMap[inv.id] = inv.productos as BoxProduct[];
     }
-    if (prods) invProductsMap[inv.id] = prods;
   }
 
   // Load buyers

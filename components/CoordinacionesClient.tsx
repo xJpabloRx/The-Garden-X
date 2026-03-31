@@ -103,6 +103,7 @@ export default function CoordinacionesClient({
           estado_caja: "disponible",
           qr_token: coord.qr_token ?? null,
           notas: caja.composicion ?? null,
+          productos: prods.length > 0 ? prods : [],
         }).select("id").single();
 
         if (invErr) { setError(`Box ${caja.caja}: ${invErr.message}`); continue; }
