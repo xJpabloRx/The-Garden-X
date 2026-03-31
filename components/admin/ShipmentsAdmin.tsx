@@ -154,6 +154,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
   const [bulkSaving, setBulkSaving] = useState(false);
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
+  const bulkFormRef = useRef<HTMLDivElement>(null);
 
   // New shipment not needed — shipments come from Pilot X
   // Auto-linking is handled by DB triggers matching exportaciones.cliente ↔ clientes.empresa
@@ -364,6 +365,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
       setBulkDetails([{ tipo: "bouquet", variedad: "", cantidad: 25, stem_length: "50", color: "" }]);
     }
     setBulkMode(true);
+    setTimeout(() => bulkFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
   }
 
   function addBulkDetail() {
@@ -548,7 +550,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
                             {/* Bulk edit form */}
                             {bulkMode && bulkSelected.size > 0 && (
-                              <div className="border border-purple-400/20 bg-purple-400/5 rounded-lg p-3 space-y-2 animate-fade-in">
+                              <div ref={bulkFormRef} className="border border-purple-400/20 bg-purple-400/5 rounded-lg p-3 space-y-2 animate-fade-in">
                                 <div className="flex items-center justify-between">
                                   <p className="text-xs text-purple-400 font-semibold">Bulk Edit — {bulkSelected.size} boxes selected</p>
                                   <button onClick={cancelBulkEdit} className="text-dim hover:text-white"><X size={14} /></button>
