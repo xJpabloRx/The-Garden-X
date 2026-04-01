@@ -156,6 +156,13 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
   const [rangeTo, setRangeTo] = useState("");
   const bulkFormRef = useRef<HTMLDivElement>(null);
 
+  // Shipment status/dates editing
+  const [editingShipDates, setEditingShipDates] = useState<string | null>(null); // dateKey
+  const [shipEstimada, setShipEstimada] = useState("");
+  const [shipConfirmada, setShipConfirmada] = useState("");
+  const [shipEstado, setShipEstado] = useState("coordinado");
+  const [savingShipDates, setSavingShipDates] = useState(false);
+
   // New shipment not needed — shipments come from Pilot X
   // Auto-linking is handled by DB triggers matching exportaciones.cliente ↔ clientes.empresa
 
@@ -446,6 +453,47 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
     a.click();
   }
 
+  async function saveShipDates(dg: DateGroup) {
+    setSavingShipDates(true);
+    // Update all coordinaciones matching this HAWB
+    const updates: Record<string, unknown> = { estado: shipEstado };
+    if (shipEstimada) updates.fecha_estimada_miami = shipEstimada;
+    if (shipConfirmada) updates.fecha_confirmada_miami = shipConfirmada;
+
+    for (const ship of dg.shipments) {
+      if (ship.export_id) {
+        await supabase.from("coordinaciones").update(updates).eq("export_id", ship.export_id);
+      }
+    }
+    // Also try by hawb match
+    if (dg.hawb) {
+      await supabase.from("coordinaciones").update(updates).eq("hawb", dg.hawb);
+    }
+    setSavingShipDates(false);
+    setEditingShipDates(null);
+  }
+
+  function startEditShipDates(dateKey: string, dg: DateGroup) {
+    setEditingShipDates(dateKey);
+    // Try to get existing values from first coordinacion
+    const firstShip = dg.shipments[0];
+    // We need to fetch from coordinaciones — for now use empty defaults
+    setShipEstimada("");
+    setShipConfirmada("");
+    setShipEstado("coordinado");
+    // Fetch current values
+    if (firstShip?.export_id) {
+      supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami")
+        .eq("export_id", firstShip.export_id).limit(1).single().then(({ data }) => {
+          if (data) {
+            setShipEstado(data.estado || "coordinado");
+            setShipEstimada(data.fecha_estimada_miami || "");
+            setShipConfirmada(data.fecha_confirmada_miami || "");
+          }
+        });
+    }
+  }
+
   if (loading) return (
     <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-cyan-400" /></div>
   );
@@ -520,6 +568,51 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
                         {isDateOpen && (
                           <div className="bg-bg/30 px-3 sm:px-6 py-2 space-y-2 border-t border-white/5">
+                            {/* Shipment status & dates */}
+                            {editingShipDates === dateKey ? (
+                              <div className="bg-purple-400/5 border border-purple-400/20 rounded-lg p-3 space-y-3 animate-fade-in">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs text-purple-400 font-semibold uppercase tracking-wider">Shipment Status & Dates</p>
+                                  <button onClick={() => setEditingShipDates(null)} className="text-dim hover:text-white"><X size={14} /></button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-dim mb-1">Status</label>
+                                    <select value={shipEstado} onChange={e => setShipEstado(e.target.value)}
+                                      className="w-full bg-panel border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-accent">
+                                      <option value="coordinado">Coordinated</option>
+                                      <option value="en_transito">In Transit</option>
+                                      <option value="entregado">Delivered</option>
+                                      <option value="cancelado">Cancelled</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-dim mb-1">Est. Arrival</label>
+                                    <input type="date" value={shipEstimada} onChange={e => setShipEstimada(e.target.value)}
+                                      className="w-full bg-panel border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-accent" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-dim mb-1">Confirmed Arrival</label>
+                                    <input type="date" value={shipConfirmada} onChange={e => setShipConfirmada(e.target.value)}
+                                      className="w-full bg-panel border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-accent" />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => saveShipDates(dg)} disabled={savingShipDates}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 rounded-lg text-xs disabled:opacity-40">
+                                    {savingShipDates ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Save
+                                  </button>
+                                  <button onClick={() => setEditingShipDates(null)}
+                                    className="px-3 py-1.5 border border-white/10 rounded-lg text-xs text-dim hover:text-white">Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button onClick={() => startEditShipDates(dateKey, dg)}
+                                className="flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 border border-purple-400/20 hover:border-purple-400/40 px-3 py-1.5 rounded-lg transition-all">
+                                <Pencil size={12} /> Status & Dates
+                              </button>
+                            )}
+
                             {/* Bulk edit toolbar */}
                             <div className="flex flex-wrap items-center gap-2 py-1">
                               <button onClick={() => selectAllBoxes(allCajas)}

@@ -209,6 +209,12 @@ export default function CoordinacionesClient({
                 <span className="text-xs text-dim hidden sm:inline">{c.awb || "—"}</span>
                 <span className="text-xs flex-1 truncate">{c.origen} → {c.destino}</span>
                 <span className="text-xs text-dim hidden sm:inline">{formatDate(c.fecha_salida)}</span>
+                {c.fecha_confirmada_miami && (
+                  <span className="text-xs text-green-400 hidden sm:inline">Arrived: {formatDate(c.fecha_confirmada_miami)}</span>
+                )}
+                {!c.fecha_confirmada_miami && c.fecha_estimada_miami && (
+                  <span className="text-xs text-amber-400 hidden sm:inline">ETA: {formatDate(c.fecha_estimada_miami)}</span>
+                )}
                 <span className="text-xs text-purple-400">{cajas.length} box{cajas.length !== 1 ? "es" : ""}</span>
                 <Badge estado={c.estado} />
                 <div onClick={e => e.stopPropagation()}>
@@ -232,12 +238,26 @@ export default function CoordinacionesClient({
               {/* Expanded: box details */}
               {isOpen && (
                 <div className="border-t border-white/5 bg-bg/30 px-3 sm:px-4 py-3 space-y-2">
-                  <div className="flex flex-wrap gap-3 sm:gap-4 text-xs text-dim mb-2">
-                    <span>DAE: {c.dae || "—"}</span>
-                    <span>Variety: {c.variedad || "—"}</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    <div className="bg-panel rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-dim uppercase">Departure</p>
+                      <p className="text-xs text-white font-mono">{formatDate(c.fecha_salida) || "—"}</p>
+                    </div>
+                    <div className="bg-panel rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-dim uppercase">Est. Arrival</p>
+                      <p className="text-xs text-amber-400 font-mono">{c.fecha_estimada_miami ? formatDate(c.fecha_estimada_miami) : "—"}</p>
+                    </div>
+                    <div className="bg-panel rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-dim uppercase">Confirmed Arrival</p>
+                      <p className="text-xs text-green-400 font-mono">{c.fecha_confirmada_miami ? formatDate(c.fecha_confirmada_miami) : "—"}</p>
+                    </div>
+                    <div className="bg-panel rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-dim uppercase">DAE</p>
+                      <p className="text-xs text-white font-mono">{c.dae || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-xs text-dim mb-2">
                     <span>HBs: {c.hbs ?? "—"}</span>
-                    {c.fecha_estimada_miami && <span>Est. Miami: {formatDate(c.fecha_estimada_miami)}</span>}
-                    {c.fecha_confirmada_miami && <span className="text-green-400">Conf. Miami: {formatDate(c.fecha_confirmada_miami)}</span>}
                   </div>
 
                   {cajas.length === 0 && <p className="text-xs text-dim italic">No box details available</p>}

@@ -107,8 +107,7 @@ export default async function DashboardPage() {
   }
 
   const stats = {
-    total:      coordinaciones.length,
-    transito:   coordinaciones.filter(c => c.estado === "en_transito").length,
+    transito:   coordinaciones.filter(c => c.estado === "en_transito" || c.estado === "coordinado").length,
     entregadas: coordinaciones.filter(c => c.estado === "entregado").length,
   };
 
@@ -119,9 +118,8 @@ export default async function DashboardPage() {
         <p className="text-dim text-sm mt-1">Export history and shipment status</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { label: "Total",       value: stats.total,      color: "text-cyan-400" },
           { label: "In Transit",  value: stats.transito,   color: "text-yellow-400" },
           { label: "Delivered",   value: stats.entregadas, color: "text-green-400" },
         ].map(s => (
