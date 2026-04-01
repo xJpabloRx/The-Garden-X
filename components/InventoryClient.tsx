@@ -145,7 +145,15 @@ export default function InventoryClient({
         r.boxes.push({ invId: inv.id, cajaNum: inv.caja_numero ?? 0, qty: inv.cantidad_total, soldFromBox: inv.cantidad_vendida });
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.variedad.localeCompare(b.variedad));
+    return Array.from(map.values()).sort((a, b) => {
+      // Bonche first, then bouquet
+      const typeOrder = (t: string) => t.toLowerCase().includes("bonche") ? 0 : 1;
+      const ta = typeOrder(a.tipo), tb = typeOrder(b.tipo);
+      if (ta !== tb) return ta - tb;
+      // Then by available descending
+      if (b.available !== a.available) return b.available - a.available;
+      return a.variedad.localeCompare(b.variedad);
+    });
   }, [inventario, invProductsMap, productSales]);
 
   const filteredStock = (stockSearch
@@ -544,8 +552,8 @@ export default function InventoryClient({
                     onClick={() => { setExpandedShip(isShipOpen ? null : group.key); setExpandedBox(null); }}>
                     {isShipOpen ? <ChevronDown size={14} className="text-cyan-400" /> : <ChevronRight size={14} className="text-dim" />}
                     <span className="text-xs font-mono text-cyan-400">{group.info.fecha}</span>
-                    <span className="text-xs text-dim hidden sm:inline">HAWB: {group.info.hawb}</span>
-                    <span className="text-xs text-dim hidden sm:inline">AWB: {group.info.awb}</span>
+                    <span className="text-xs text-dim">HAWB: {group.info.hawb || "—"}</span>
+                    <span className="text-xs text-dim">AWB: {group.info.awb || "—"}</span>
                     <span className="ml-auto text-xs text-purple-400">{totalBoxes} box{totalBoxes !== 1 ? "es" : ""}</span>
                     {soldBoxes > 0 && <span className="text-xs text-green-400">{soldBoxes} sold</span>}
                   </div>
@@ -564,6 +572,13 @@ export default function InventoryClient({
                               <span className="text-xs text-white flex-1">{inv.variedad || "—"}</span>
                               <span className="text-xs text-dim capitalize">{inv.tipo_caja}</span>
                               <Badge estado={allSold ? "vendida" : inv.estado_caja} />
+                              {!allSold && prods.length > 0 && (
+                                <button onClick={(e) => { e.stopPropagation(); resetModal();
+                                  setSellMode({ from: "box", invId: inv.id, cajaNum: inv.caja_numero ?? 0, products: prods }); }}
+                                  className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 border border-green-400/20 hover:border-green-400/40 px-2 py-1 rounded transition-all">
+                                  <ShoppingCart size={10} /> Sell
+                                </button>
+                              )}
                             </div>
                             {isBoxOpen && (
                               <div className="border-t border-white/5 bg-bg/50 px-4 py-3 space-y-2">
