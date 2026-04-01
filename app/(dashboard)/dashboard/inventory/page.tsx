@@ -6,8 +6,9 @@ export default async function InventoryPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: cliente } = await supabase
-    .from("clientes").select("id").eq("user_id", user!.id).single();
+    .from("clientes").select("id, empresa, nombre").eq("user_id", user!.id).single();
   const clienteId = cliente?.id ?? "";
+  const empresa = cliente?.empresa ?? "";
 
   const { data: inventario } = await supabase
     .from("inventario")
@@ -30,11 +31,29 @@ export default async function InventoryPage() {
     if (c.export_id) shipLookup[`exp:${c.export_id}`] = info;
   }
 
-  const { data: exps } = await supabase
+  // Fetch exportaciones by cliente_id OR by empresa name match
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let allExps: any[] = [];
+  const { data: expsById } = await supabase
     .from("exportaciones")
     .select("id, hawb, awb, fecha, variedad, origen, destino, qr_token, export_id")
     .eq("cliente_id", clienteId);
-  for (const e of (exps ?? [])) {
+  if (expsById) allExps = expsById;
+
+  if (empresa) {
+    const { data: expsByName } = await supabase
+      .from("exportaciones")
+      .select("id, hawb, awb, fecha, variedad, origen, destino, qr_token, export_id")
+      .ilike("cliente", empresa);
+    if (expsByName) {
+      const existingIds = new Set(allExps.map((e: { id: string }) => e.id));
+      for (const e of expsByName) {
+        if (!existingIds.has(e.id)) allExps.push(e);
+      }
+    }
+  }
+
+  for (const e of allExps) {
     const info: ShipInfo = { hawb: e.hawb||"", awb: e.awb||"", fecha: e.fecha||"", variedad: e.variedad||"", origen: e.origen||"", destino: e.destino||"" };
     if (!shipLookup[e.id]) shipLookup[e.id] = info;
     if (e.qr_token && !shipLookup[`qr:${e.qr_token}`]) shipLookup[`qr:${e.qr_token}`] = info;
