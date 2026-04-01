@@ -31,9 +31,11 @@ type SellMode =
 function groupByShipment(inventario: Inventario[], shipLookup: Record<string, ShipInfo>): ShipGroup[] {
   const groups = new Map<string, ShipGroup>();
   for (const inv of inventario) {
-    const info = (inv.coordinacion_id && shipLookup[inv.coordinacion_id])
-      ? shipLookup[inv.coordinacion_id]
-      : { hawb: "—", awb: "—", fecha: inv.created_at?.slice(0, 10) || "—", variedad: inv.variedad || "", origen: "", destino: "" };
+    // Try coordinacion_id, then qr_token, then fallback
+    let info: ShipInfo | undefined;
+    if (inv.coordinacion_id) info = shipLookup[inv.coordinacion_id];
+    if (!info && inv.qr_token) info = shipLookup[`qr:${inv.qr_token}`];
+    if (!info) info = { hawb: "—", awb: "—", fecha: inv.created_at?.slice(0, 10) || "—", variedad: inv.variedad || "", origen: "", destino: "" };
     const key = `${info.hawb}|${info.awb}|${info.fecha}`;
     if (!groups.has(key)) groups.set(key, { key, info, boxes: [] });
     groups.get(key)!.boxes.push(inv);
