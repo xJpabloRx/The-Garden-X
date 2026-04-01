@@ -455,19 +455,39 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
   async function saveShipDates(dg: DateGroup) {
     setSavingShipDates(true);
-    // Update all coordinaciones matching this HAWB
-    const updates: Record<string, unknown> = { estado: shipEstado };
-    if (shipEstimada) updates.fecha_estimada_miami = shipEstimada;
-    if (shipConfirmada) updates.fecha_confirmada_miami = shipConfirmada;
+    const updates: Record<string, unknown> = {
+      estado: shipEstado,
+      fecha_estimada_miami: shipEstimada || null,
+      fecha_confirmada_miami: shipConfirmada || null,
+    };
 
+    let updated = false;
     for (const ship of dg.shipments) {
       if (ship.export_id) {
         await supabase.from("coordinaciones").update(updates).eq("export_id", ship.export_id);
+        updated = true;
       }
     }
-    // Also try by hawb match
     if (dg.hawb) {
       await supabase.from("coordinaciones").update(updates).eq("hawb", dg.hawb);
+      updated = true;
+    }
+    // If no coordinacion found, try creating one from the first exportacion
+    if (!updated && dg.shipments.length > 0) {
+      const ship = dg.shipments[0];
+      const cl = clientes.find(c => c.id === ship.cliente_id);
+      await supabase.from("coordinaciones").insert({
+        cliente_id: ship.cliente_id,
+        cliente_nombre: cl?.nombre || ship.cliente || "",
+        hawb: dg.hawb, awb: dg.awb,
+        origen: ship.origen, destino: ship.destino,
+        dae: ship.dae, hbs: parseInt(ship.hbs) || 0,
+        fecha_salida: ship.fecha,
+        export_id: ship.export_id,
+        qr_token: ship.qr_token,
+        cajas: ship.cajas,
+        ...updates,
+      });
     }
     setSavingShipDates(false);
     setEditingShipDates(null);
@@ -475,22 +495,24 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
   function startEditShipDates(dateKey: string, dg: DateGroup) {
     setEditingShipDates(dateKey);
-    // Try to get existing values from first coordinacion
-    const firstShip = dg.shipments[0];
-    // We need to fetch from coordinaciones — for now use empty defaults
     setShipEstimada("");
     setShipConfirmada("");
     setShipEstado("coordinado");
-    // Fetch current values
-    if (firstShip?.export_id) {
-      supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami")
-        .eq("export_id", firstShip.export_id).limit(1).single().then(({ data }) => {
-          if (data) {
-            setShipEstado(data.estado || "coordinado");
-            setShipEstimada(data.fecha_estimada_miami || "");
-            setShipConfirmada(data.fecha_confirmada_miami || "");
-          }
-        });
+    // Fetch current values — try by export_id first, then by hawb
+    const firstShip = dg.shipments[0];
+    const fetchCoord = firstShip?.export_id
+      ? supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami").eq("export_id", firstShip.export_id).limit(1).single()
+      : dg.hawb
+        ? supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami").eq("hawb", dg.hawb).limit(1).single()
+        : null;
+    if (fetchCoord) {
+      fetchCoord.then(({ data }) => {
+        if (data) {
+          setShipEstado(data.estado || "coordinado");
+          setShipEstimada(data.fecha_estimada_miami || "");
+          setShipConfirmada(data.fecha_confirmada_miami || "");
+        }
+      });
     }
   }
 
