@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { CajaItem, Variedad } from "@/lib/types";
 import {
   ChevronDown, ChevronRight, Save,
@@ -29,6 +30,9 @@ type Exportacion = {
   cajas: CajaItem[];
   qr_token: string;
   created_at: string;
+  estado?: string;
+  fecha_estimada_miami?: string;
+  fecha_confirmada_miami?: string;
 };
 
 type BoxDetail = {
@@ -455,65 +459,44 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
 
   async function saveShipDates(dg: DateGroup) {
     setSavingShipDates(true);
-    const updates: Record<string, unknown> = {
+    const updates = {
       estado: shipEstado,
       fecha_estimada_miami: shipEstimada || null,
       fecha_confirmada_miami: shipConfirmada || null,
     };
 
-    let updated = false;
+    // Update exportaciones directly (source of truth for admin)
+    for (const ship of dg.shipments) {
+      await supabase.from("exportaciones").update(updates).eq("id", ship.id);
+    }
+    // Also update coordinaciones if they exist
+    if (dg.hawb) {
+      await supabase.from("coordinaciones").update(updates).eq("hawb", dg.hawb);
+    }
     for (const ship of dg.shipments) {
       if (ship.export_id) {
         await supabase.from("coordinaciones").update(updates).eq("export_id", ship.export_id);
-        updated = true;
       }
     }
-    if (dg.hawb) {
-      await supabase.from("coordinaciones").update(updates).eq("hawb", dg.hawb);
-      updated = true;
-    }
-    // If no coordinacion found, try creating one from the first exportacion
-    if (!updated && dg.shipments.length > 0) {
-      const ship = dg.shipments[0];
-      const cl = clientes.find(c => c.id === ship.cliente_id);
-      await supabase.from("coordinaciones").insert({
-        cliente_id: ship.cliente_id,
-        cliente_nombre: cl?.nombre || ship.cliente || "",
-        hawb: dg.hawb, awb: dg.awb,
-        origen: ship.origen, destino: ship.destino,
-        dae: ship.dae, hbs: parseInt(ship.hbs) || 0,
-        fecha_salida: ship.fecha,
-        export_id: ship.export_id,
-        qr_token: ship.qr_token,
-        cajas: ship.cajas,
-        ...updates,
-      });
-    }
+
+    // Update local state
+    setShipments(prev => prev.map(s => {
+      if (dg.shipments.some(ds => ds.id === s.id)) {
+        return { ...s, estado: shipEstado, fecha_estimada_miami: shipEstimada || undefined, fecha_confirmada_miami: shipConfirmada || undefined };
+      }
+      return s;
+    }));
     setSavingShipDates(false);
     setEditingShipDates(null);
   }
 
   function startEditShipDates(dateKey: string, dg: DateGroup) {
     setEditingShipDates(dateKey);
-    setShipEstimada("");
-    setShipConfirmada("");
-    setShipEstado("coordinado");
-    // Fetch current values — try by export_id first, then by hawb
-    const firstShip = dg.shipments[0];
-    const fetchCoord = firstShip?.export_id
-      ? supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami").eq("export_id", firstShip.export_id).limit(1).single()
-      : dg.hawb
-        ? supabase.from("coordinaciones").select("estado, fecha_estimada_miami, fecha_confirmada_miami").eq("hawb", dg.hawb).limit(1).single()
-        : null;
-    if (fetchCoord) {
-      fetchCoord.then(({ data }) => {
-        if (data) {
-          setShipEstado(data.estado || "coordinado");
-          setShipEstimada(data.fecha_estimada_miami || "");
-          setShipConfirmada(data.fecha_confirmada_miami || "");
-        }
-      });
-    }
+    // Read directly from the first exportacion in this group
+    const first = dg.shipments[0];
+    setShipEstado(first?.estado || "coordinado");
+    setShipEstimada(first?.fecha_estimada_miami || "");
+    setShipConfirmada(first?.fecha_confirmada_miami || "");
   }
 
   if (loading) return (
@@ -586,6 +569,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
                             <Download size={12} /> CSV
                           </button>
                           <span className="ml-auto text-xs text-purple-400">{allCajas.length} box{allCajas.length !== 1 ? "es" : ""}</span>
+                          <Badge estado={dg.shipments[0]?.estado || "coordinado"} />
                         </div>
 
                         {isDateOpen && (
