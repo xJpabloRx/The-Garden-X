@@ -7,6 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(date?: string | null): string {
   if (!date) return "—";
+  // For date-only strings (YYYY-MM-DD), parse without timezone to avoid off-by-one
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(date.trim());
+  if (dateOnly) {
+    const [y, m, d] = date.trim().split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+  }
   return new Date(date).toLocaleDateString("en-US", {
     day: "2-digit", month: "short", year: "numeric",
   });
