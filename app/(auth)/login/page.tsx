@@ -15,26 +15,60 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true); setError("");
 
-    // Resolve username → email if needed
+    // Resolver username → email si no es un email
     let email = username.trim();
     if (!email.includes("@")) {
-      // Use RPC function that bypasses RLS to look up email by username
       const { data } = await supabase.rpc("get_email_by_username", { p_username: email });
       if (!data) {
-        setError("Username not found");
+        setError("Usuario no encontrado.");
         setLoading(false);
         return;
       }
       email = data as string;
     }
 
-    const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (authErr) {
-      setError("Invalid credentials. Please try again.");
+    // Autenticar
+    const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (authErr || !authData.user) {
+      setError("Credenciales incorrectas.");
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
+
+    const userId = authData.user.id;
+
+    // Verificar si es admin
+    const { data: adminRow } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (adminRow) {
+      // Es admin — guardar rol en cookie y redirigir
+      document.cookie = "x-user-role=admin; path=/; max-age=86400; SameSite=Lax";
+      router.push("/dashboard");
+      return;
+    }
+
+    // Verificar si es cliente activo
+    const { data: clienteRow } = await supabase
+      .from("clientes")
+      .select("id, activo")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (clienteRow?.activo === true) {
+      // Es cliente activo — guardar rol y redirigir
+      document.cookie = "x-user-role=cliente; path=/; max-age=86400; SameSite=Lax";
+      router.push("/dashboard");
+      return;
+    }
+
+    // No tiene acceso — cerrar sesión y mostrar error inmediato
+    await supabase.auth.signOut();
+    setError("Tu cuenta no tiene acceso a este portal. Contacta al administrador.");
+    setLoading(false);
   }
 
   return (
@@ -102,7 +136,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-lg transition-all text-sm mt-2"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Verificando acceso..." : "Sign In"}
             </button>
           </form>
         </div>
