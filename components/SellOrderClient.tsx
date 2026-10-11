@@ -392,7 +392,7 @@ export default function SellOrderClient({
           </div>
         </Card>
         <button onClick={() => { setOrderLines([]); setBuyerId(""); setBuyerName(""); setOrderNotes(""); setOrderPagado(false); setSubmitted(false); setReviewing(false); setViewTab("new"); }}
-          className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm">
+          className="w-full px-6 py-3 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm">
           New Order
         </button>
       </div>
@@ -453,7 +453,7 @@ export default function SellOrderClient({
           <button onClick={() => setReviewing(false)}
             className="flex-1 px-4 py-3 border border-white/10 rounded-lg text-sm text-dim hover:text-white">← Back</button>
           <button onClick={handleSubmit} disabled={submitting || orderLines.length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-cyan-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             Confirm & Save ({totalItems} items)
           </button>
@@ -684,7 +684,7 @@ export default function SellOrderClient({
                 <button onClick={() => { setShowSearch(false); setSearchTerm(""); setModalSelections(new Map()); }}
                   className="px-4 py-2 border border-white/10 rounded-lg text-sm text-dim hover:text-white">Cancel</button>
                 <button onClick={addSelectedProducts} disabled={modalSelections.size === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                  className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                   <Check size={14} /> Accept
                 </button>
               </div>
@@ -711,7 +711,7 @@ export default function SellOrderClient({
             </div>
             {error && <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>}
             <button onClick={handleReview} disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-cyan-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
               Review Order ({totalItems} items)
             </button>

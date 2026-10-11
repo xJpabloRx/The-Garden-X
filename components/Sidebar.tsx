@@ -51,8 +51,8 @@ export default function Sidebar({ cliente, userEmail, isAdmin }: {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
         <div>
-          <span className="text-xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-            THE GARDEN X
+          <span className="text-lg font-black tracking-tight text-white">
+            THE GARDEN <span className="text-accent">X</span>
           </span>
           <p className="text-dim text-xs font-mono mt-0.5">{isAdmin ? "Admin Panel" : "Client Portal"}</p>
         </div>
@@ -133,12 +133,12 @@ export default function Sidebar({ cliente, userEmail, isAdmin }: {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-panel border-b border-white/5 flex items-center px-4 z-50">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-black border-b border-line flex items-center px-4 z-50">
         <button onClick={() => setMobileOpen(true)} className="text-dim hover:text-white p-1 mr-3">
           <Menu size={22} />
         </button>
-        <span className="text-lg font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-          THE GARDEN X
+        <span className="text-lg font-black tracking-tight text-white">
+          THE GARDEN <span className="text-accent">X</span>
         </span>
       </div>
 
@@ -149,7 +149,7 @@ export default function Sidebar({ cliente, userEmail, isAdmin }: {
 
       {/* Sidebar — desktop: fixed left, mobile: slide-in */}
       <aside className={cn(
-        "fixed top-0 h-full w-64 bg-panel border-r border-white/5 flex flex-col z-50 transition-transform duration-200",
+        "fixed top-0 h-full w-64 bg-black border-r border-line flex flex-col z-50 transition-transform duration-200",
         "lg:left-0 lg:translate-x-0",
         mobileOpen ? "left-0 translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>

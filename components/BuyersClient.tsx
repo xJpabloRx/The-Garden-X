@@ -88,7 +88,7 @@ export default function BuyersClient({ initialBuyers, clienteId }: {
             className="w-full pl-9 pr-3 py-2 bg-bg border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-accent" />
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm">
+          className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm">
           <Plus size={14} /> New Client
         </button>
       </div>
@@ -131,7 +131,7 @@ export default function BuyersClient({ initialBuyers, clienteId }: {
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={handleSave} disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                 {editing ? "Save Changes" : "Create Client"}
               </button>

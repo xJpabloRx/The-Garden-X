@@ -151,7 +151,7 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button type="submit" disabled={saving}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+              className="px-4 py-2 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
               {saving ? "Creating..." : "Create Client"}
             </button>
             <button type="button" onClick={() => setShowCreate(false)}
@@ -258,7 +258,7 @@ export default function ClientsAdmin({ clientes: initial }: { clientes: Cliente[
             </div>
             <div className="flex gap-3">
               <button type="submit" disabled={resetting || newPassword.length < 6}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                 {resetting ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
                 {resetting ? "Resetting..." : "Reset Password"}
               </button>

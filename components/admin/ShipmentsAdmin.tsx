@@ -812,7 +812,7 @@ export default function ShipmentsAdmin({ clientes }: { clientes: ClienteMin[] })
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 lg:left-[calc(50%+8rem)] z-40 bg-panel border border-purple-400/30 rounded-2xl shadow-2xl shadow-purple-500/10 px-5 py-3 flex items-center gap-3 animate-fade-in">
           <span className="text-xs text-purple-400 font-mono font-bold">{bulkSelected.size} selected</span>
           <button onClick={startBulkEdit}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-black font-bold rounded-lg text-xs transition-all hover:from-purple-400 hover:to-cyan-400">
+            className="flex items-center gap-1.5 px-4 py-2 bg-accent text-black font-bold rounded-lg text-xs transition-all hover:bg-cyan-300">
             <Layers size={14} /> Bulk Edit
           </button>
           <button onClick={() => setBulkSelected(new Set())}

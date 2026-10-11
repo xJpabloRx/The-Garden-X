@@ -433,7 +433,7 @@ export default function InventoryClient({
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={handleSell} disabled={selling || sellQty < 1 || (sellMode.from === "stock" && !selectedBoxId)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-cyan-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                 {selling ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
                 Confirm Sale ({sellQty})
               </button>
@@ -485,7 +485,7 @@ export default function InventoryClient({
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={handleSell} disabled={selling}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-cyan-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-cyan-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                 {selling ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
                 Sell Entire Box
               </button>
@@ -528,7 +528,7 @@ export default function InventoryClient({
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={handleCredit} disabled={crediting || creditQty < 1}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold rounded-lg text-sm disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded-lg text-sm disabled:opacity-40">
                 {crediting ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
                 Confirm Credit ({creditQty})
               </button>
