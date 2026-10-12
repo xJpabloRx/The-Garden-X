@@ -2,9 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sistema de diseño: negro minimalista, un único acento (verde de marca) */
 :root {
-  --font-inter: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-inter: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --bg: #000000;
+  --panel: #0b0b0c;
+  --line: #1f1f23;
+  --text: #ededed;
+  --dim: #8b8b94;
+  --accent: #00d47e;
 }
 
 * { box-sizing: border-box; }
@@ -24,12 +31,17 @@ input, textarea, [contenteditable] {
 }
 
 body {
-  background-color: #0f0f23;
-  color: #e0e0e0;
+  background-color: var(--bg);
+  color: var(--text);
   font-family: var(--font-inter);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
 }
+
+::selection { background: rgba(0, 212, 126, 0.25); color: #fff; }
+
+:focus-visible { outline: 2px solid rgba(0, 212, 126, 0.6); outline-offset: 2px; }
 
 /* Prevent zoom on input focus (iOS) */
 @media (max-width: 768px) {
@@ -44,20 +56,12 @@ html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
   button, a { min-height: 36px; }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #1a1a2e; }
-::-webkit-scrollbar-thumb { background: #666677; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #00ffff; }
+/* Scrollbar discreta */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 
-/* Glow effects */
-.glow-cyan  { box-shadow: 0 0 20px rgba(0,255,255,0.15); }
-.glow-purple { box-shadow: 0 0 20px rgba(167,139,250,0.15); }
-
-/* Grid background */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
+/* Compatibilidad: los antiguos efectos neón quedan neutralizados */
+.glow-cyan, .glow-purple { box-shadow: none; }
+.grid-bg { background-image: none; }

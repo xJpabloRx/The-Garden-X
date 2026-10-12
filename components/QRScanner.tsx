@@ -37,7 +37,7 @@ function QRResult({ result }: { result: QRData }) {
     <div className="space-y-3 animate-fade-in text-sm">
       {/* ── Box Contents ── */}
       {(caja || products.length > 0) && (
-        <div className="bg-gradient-to-b from-cyan-500/5 to-transparent border border-cyan-500/20 rounded-xl overflow-hidden">
+        <div className="bg-panel border border-cyan-500/20 rounded-xl overflow-hidden">
           {/* Box header */}
           {caja && (
             <div className="px-4 pt-4 pb-3 border-b border-white/5">

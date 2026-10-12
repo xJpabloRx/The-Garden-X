@@ -108,7 +108,7 @@ export default function DatePicker({ value, onChange, placeholder, minDate }: {
                     ${disabled
                       ? "text-white/15 cursor-not-allowed"
                       : isSelected
-                        ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold"
+                        ? "bg-accent hover:bg-cyan-300 text-black font-bold"
                         : isToday
                           ? "border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/10"
                           : "text-white/80 hover:bg-white/5"}`}>

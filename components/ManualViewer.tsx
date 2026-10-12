@@ -360,7 +360,7 @@ function Block({ block }: { block: ManualBlock }) {
               if (placeholder) placeholder.style.display = "flex";
             }}
           />
-          <div className="hidden items-center justify-center h-32 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 text-dim text-xs italic">
+          <div className="hidden items-center justify-center h-32 bg-white/[0.02] text-dim text-xs italic">
             📷 {block.alt}
           </div>
         </div>

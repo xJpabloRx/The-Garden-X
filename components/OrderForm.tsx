@@ -596,7 +596,7 @@ export default function OrderForm({ clienteId, variedades }: { clienteId: string
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button type="submit" disabled={saving || !fechaSalida || boxes.length === 0 || hasIncompleteBox}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-40 text-black font-bold py-2.5 rounded-lg transition-all text-sm">
+              className="flex-1 flex items-center justify-center gap-2 bg-accent hover:bg-cyan-300 disabled:opacity-40 text-black font-bold py-2.5 rounded-lg transition-all text-sm">
               {saving ? <Loader2 size={14} className="animate-spin" /> : null}
               {saving ? "Submitting..." : "Submit Order"}
             </button>

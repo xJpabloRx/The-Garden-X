@@ -72,27 +72,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      {/* Background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-md animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-black">
+      <div className="relative w-full max-w-sm animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-10">
-          <span className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-            THE GARDEN X
+          <span className="text-3xl font-black tracking-tight text-white">
+            THE GARDEN <span className="text-accent">X</span>
           </span>
-          <p className="text-dim text-sm font-mono tracking-widest uppercase mt-2">
+          <p className="text-dim text-xs tracking-[0.3em] uppercase mt-3">
             Client Portal
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-panel border border-white/5 rounded-2xl p-8 glow-cyan">
-          <h2 className="text-lg font-semibold text-white mb-6">Sign In</h2>
+        <div className="bg-panel border border-line rounded-2xl p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+          <h2 className="text-base font-semibold text-white mb-6">Sign in</h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -134,7 +128,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-lg transition-all text-sm mt-2"
+              className="w-full bg-accent hover:bg-cyan-300 disabled:opacity-50 text-black font-bold py-2.5 rounded-lg transition-all text-sm mt-2"
             >
               {loading ? "Verificando acceso..." : "Sign In"}
             </button>
