@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AvisoCookies from "@/components/AvisoCookies";
 
 export const metadata: Metadata = {
   title: "THE GARDEN X",
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className="dark">
       <body className="bg-bg text-white antialiased grid-bg min-h-screen">
         {children}
+        <AvisoCookies />
         <script
           dangerouslySetInnerHTML={{
             __html: `

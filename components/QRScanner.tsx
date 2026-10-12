@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { decodeQRToken, isValidQRToken, isShortToken } from "@/lib/qr";
 import { createClient } from "@/lib/supabase/client";
+import { guardarCookie, leerCookie } from "@/lib/cookies";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Camera, Upload, X, CheckCircle, ShieldAlert, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -23,7 +24,7 @@ function Collapsible({ title, defaultOpen = false, children }: { title: string; 
 }
 
 /* ── QR Result display ── */
-function QRResult({ result }: { result: QRData }) {
+function QRResult({ result, esAdmin = false }: { result: QRData; esAdmin?: boolean }) {
   const caja = result.caja != null && typeof result.caja === "object" ? result.caja as Record<string, unknown> : null;
   // Products from inside the caja (cajas jsonb has tipo/variedad/cantidad/stem_length/color per product)
   const cajaProducts: Record<string, unknown>[] = caja && Array.isArray(caja.productos) ? caja.productos as Record<string, unknown>[] : [];
@@ -35,6 +36,19 @@ function QRResult({ result }: { result: QRData }) {
 
   return (
     <div className="space-y-3 animate-fade-in text-sm">
+      {/* ── Admin: de qué cliente es esta caja ── */}
+      {esAdmin && (
+        <div className="flex items-center justify-between gap-3 bg-purple-500/5 border border-purple-500/20 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-xs text-dim uppercase tracking-wider">Client</p>
+            <p className="text-white font-semibold">{String(result.cliente ?? "—")}</p>
+          </div>
+          <div className="text-right text-xs font-mono text-dim">
+            <p>{String(result.fecha ?? "")}</p>
+            <p>HAWB {String(result.hawb ?? "—")}</p>
+          </div>
+        </div>
+      )}
       {/* ── Box Contents ── */}
       {(caja || products.length > 0) && (
         <div className="bg-gradient-to-b from-cyan-500/5 to-transparent border border-cyan-500/20 rounded-xl overflow-hidden">
@@ -66,8 +80,8 @@ function QRResult({ result }: { result: QRData }) {
         </div>
       )}
 
-      {/* ── Order Details (collapsible, closed) ── */}
-      <Collapsible title="Order Details">
+      {/* ── Order Details (collapsible, closed; abierto para admins) ── */}
+      <Collapsible title="Order Details" defaultOpen={esAdmin}>
         <div className="grid grid-cols-2 gap-2">
           {([
             ["Client", result.cliente], ["Date", result.fecha],
@@ -86,7 +100,9 @@ function QRResult({ result }: { result: QRData }) {
   );
 }
 
-export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: string; empresa: string; nombre: string }) {
+export default function QRScanner({ clienteId, empresa, nombre, esAdmin = false }: {
+  clienteId: string; empresa: string; nombre: string; esAdmin?: boolean;
+}) {
   const [scanning, setScanning] = useState(false);
   const [result, setResult]     = useState<QRData | null>(null);
   const [error, setError]       = useState("");
@@ -95,10 +111,24 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const ocupadoRef  = useRef(false);            // procesando un QR: los fotogramas siguientes se ignoran
+  const ultimoRef   = useRef("");               // el último QR leído (no se vuelve a consultar mientras siga delante)
   const supabase  = createClient();
 
+  // Cámara recordada: si ya se autorizó en este navegador (cookie tgx_cam o permiso «granted»), se abre sola al
+  // entrar, sin volver a pulsar ni a pedir permiso. Si el navegador la tiene bloqueada, no se intenta.
   useEffect(() => {
-    return () => { stopCamera(); };
+    let cancelado = false;
+    (async () => {
+      let autorizada = leerCookie("tgx_cam") === "1";
+      try {
+        const permiso = await navigator.permissions?.query({ name: "camera" as PermissionName });
+        if (permiso?.state === "granted") autorizada = true;
+        if (permiso?.state === "denied") autorizada = false;
+      } catch { /* navegadores sin Permissions API para la cámara (Safari antiguo): vale la cookie */ }
+      if (autorizada && !cancelado) startCamera();
+    })();
+    return () => { cancelado = true; stopCamera(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -170,7 +200,7 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
         setError("QR token not found in database");
         return;
       }
-      const owned = await verifyOwnership(trimmed);
+      const owned = esAdmin || await verifyOwnership(trimmed);      // admin: cualquier caja de cualquier cliente
       setChecking(false);
       if (!owned) {
         setError("Access denied — this QR does not belong to your account.");
@@ -193,7 +223,7 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
       const decoded = decodeQRToken(trimmed);
       if (!decoded) { setChecking(false); setError("Could not decode QR"); return; }
       data = { ...decoded, token: trimmed };
-      const owned = await verifyOwnership(trimmed);
+      const owned = esAdmin || await verifyOwnership(trimmed);
       setChecking(false);
       if (!owned) {
         setError("Access denied — this QR does not belong to your account.");
@@ -207,44 +237,53 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
   }
 
   async function startCamera() {
+    if (streamRef.current) return;                 // ya está abierta
     setError(""); setResult(null);
     try {
-      // Request camera with autofocus and high resolution for better QR detection
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      // La cámara que se usó la última vez (cookie tgx_cam_dev); si no, la trasera del móvil. Resolución alta para
+      // leer mejor los QR.
+      const guardada = leerCookie("tgx_cam_dev");
+      const video: MediaTrackConstraints = { width: { ideal: 1280 }, height: { ideal: 720 } };
+      if (guardada) video.deviceId = { ideal: guardada };
+      else video.facingMode = "environment";
+      const stream = await navigator.mediaDevices.getUserMedia({ video });
       streamRef.current = stream;
+      // Se recuerda que este navegador ya autorizó la cámara (y cuál): la próxima vez se abre sola.
+      guardarCookie("tgx_cam", "1");
+      const dispositivo = stream.getVideoTracks()[0]?.getSettings().deviceId;
+      if (dispositivo) guardarCookie("tgx_cam_dev", dispositivo);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       setScanning(true);
 
-      // Use continuous decoding — much more reliable than decodeOnce
+      // Lectura continua: la cámara sigue abierta entre caja y caja (no se vuelve a pedir permiso). Cada QR nuevo
+      // se consulta una vez; el mismo QR delante de la cámara no se repite.
       const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const reader = new BrowserMultiFormatReader();
 
-      const controls = await reader.decodeFromStream(stream, videoRef.current!, (res, err) => {
-        if (res) {
-          const text = res.getText();
-          if (text) {
-            stopCamera();
-            processToken(text);
-          }
-        }
-        // Ignore NotFoundException — it just means no QR found in this frame
-        if (err && err.name !== "NotFoundException") {
-          // Only log unexpected errors, don't show to user during scanning
-        }
+      const controls = await reader.decodeFromStream(stream, videoRef.current!, (res) => {
+        const text = res?.getText()?.trim();
+        if (!text || ocupadoRef.current || text === ultimoRef.current) return;
+        ultimoRef.current = text;
+        ocupadoRef.current = true;
+        processToken(text).finally(() => { ocupadoRef.current = false; });
+        // NotFoundException en un fotograma solo significa «no hay QR aquí»: no se muestra
       });
       controlsRef.current = controls;
     } catch (e: unknown) {
       stopCamera();
-      setError(e instanceof Error ? e.message : "Camera access error");
+      const nombre = e instanceof Error ? e.name : "";
+      if (nombre === "NotAllowedError") {
+        guardarCookie("tgx_cam", "0");
+        setError("Camera blocked by the browser. Allow it for this site (lock icon next to the address) and try again.");
+      } else if (nombre === "OverconstrainedError" || nombre === "NotFoundError") {
+        guardarCookie("tgx_cam_dev", "", 0);         // la cámara guardada ya no está: se usará otra
+        setError("Camera not found. Press Open Camera again.");
+      } else {
+        setError(e instanceof Error ? e.message : "Camera access error");
+      }
     }
   }
 
@@ -253,6 +292,7 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
     controlsRef.current = null;
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
+    ultimoRef.current = "";
     if (videoRef.current) videoRef.current.srcObject = null;
     setScanning(false);
   }
@@ -330,7 +370,9 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
                   <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-cyan-400" />
                   <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-cyan-400" />
                 </div>
-                <p className="absolute bottom-3 text-xs text-cyan-400 bg-black/60 px-3 py-1 rounded-full">Scanning...</p>
+                <p className="absolute bottom-3 text-xs text-cyan-400 bg-black/60 px-3 py-1 rounded-full">
+                  {result ? "Point at the next box…" : "Scanning..."}
+                </p>
               </div>
             )}
           </div>
@@ -365,7 +407,7 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
           </div>
           {checking && (
             <p className="text-xs text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded-lg px-3 py-2">
-              Verifying ownership...
+              {esAdmin ? "Looking up box..." : "Verifying ownership..."}
             </p>
           )}
           {error && (
@@ -386,7 +428,7 @@ export default function QRScanner({ clienteId, empresa, nombre }: { clienteId: s
             Scan a QR code to view contents
           </div>
         ) : (
-          <QRResult result={result} />
+          <QRResult result={result} esAdmin={esAdmin} />
         )}
       </Card>
     </div>
