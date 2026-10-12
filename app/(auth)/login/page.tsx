@@ -44,9 +44,10 @@ export default function LoginPage() {
       .eq("user_id", userId)
       .maybeSingle();
 
+    // El rol ya no se guarda en una cookie del navegador (se podía falsificar): lo comprueba el servidor.
+    document.cookie = "x-user-role=; path=/; max-age=0; SameSite=Lax";
+
     if (adminRow) {
-      // Es admin — guardar rol en cookie y redirigir
-      document.cookie = "x-user-role=admin; path=/; max-age=86400; SameSite=Lax";
       router.push("/dashboard");
       return;
     }
@@ -59,8 +60,6 @@ export default function LoginPage() {
       .maybeSingle();
 
     if (clienteRow?.activo === true) {
-      // Es cliente activo — guardar rol y redirigir
-      document.cookie = "x-user-role=cliente; path=/; max-age=86400; SameSite=Lax";
       router.push("/dashboard");
       return;
     }

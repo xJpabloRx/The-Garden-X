@@ -27,6 +27,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/orders",    label: "Orders",     icon: ShoppingCart },
   { href: "/dashboard/admin/clients",   label: "Clients",    icon: Users },
   { href: "/dashboard/admin/varieties", label: "Varieties",  icon: Leaf },
+  { href: "/dashboard/qr",              label: "QR Scanner", icon: QrCode },     // cualquier caja, de cualquier cliente
 ];
 
 export default function Sidebar({ cliente, userEmail, isAdmin }: {

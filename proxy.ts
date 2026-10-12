@@ -8,6 +8,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { sameSite: "lax", secure: process.env.NODE_ENV === "production" },
       cookies: {
         getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
@@ -39,10 +40,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Verificar rol solo en rutas de admin (no en cada request del dashboard)
+  // Rol solo en rutas de admin (no en cada request del dashboard), comprobado en la base de datos: antes se miraba
+  // una cookie "x-user-role" que el propio navegador podía escribir.
   if (user && isAdminRoute) {
-    const role = request.cookies.get("x-user-role")?.value;
-    if (role !== "admin") {
+    const { data: adminRow } = await supabase.from("admins").select("id").eq("user_id", user.id).maybeSingle();
+    if (!adminRow) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
